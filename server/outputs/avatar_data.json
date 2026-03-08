@@ -1,0 +1,18 @@
+{
+    "gender": "female",
+    "proportions": {
+        "front": {
+            "shoulder_width": 0.75,
+            "waist_width": 0.75,
+            "hip_width": 0.75,
+            "height": 1.0
+        }
+    },
+    "shape_key_weights": {
+        "Chest": 0.5275880684894598,
+        "Waist": 0.8938020154387982,
+        "Hips": 0.4858752672925333
+    },
+    "unit": "relative",
+    "note": "Shape-similar avatar using normalized proportions (privacy-safe, non-exact)"
+}
