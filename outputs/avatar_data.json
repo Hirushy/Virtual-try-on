@@ -1,0 +1,39 @@
+{
+    "gender": "female",
+    "body_type": "slim",
+    "size": "XL",
+    "fullness_score": 0.75,
+    "confidence_score": 1.0,
+    "proportions": {
+        "front": {
+            "shoulder_width": 0.25082669907918204,
+            "waist_width": 0.19923905534925487,
+            "hip_width": 0.14867223279986577,
+            "arm_length": 0.26277355240791667,
+            "leg_length": 0.4081135130507604,
+            "height": 0.8031427184331245
+        },
+        "has_side_image": true
+    },
+    "shape_key_weights": {
+        "Chest": 0.590222492326517,
+        "Waist": 0.8269921279104573,
+        "Hips": 0.4056019399988814,
+        "Female_Waist_Bigger": 0.5,
+        "Female_Waist_Smaller": 0.0,
+        "Female_Hips_Bigger": 0.5,
+        "Female_Hips_Smaller": 0.0,
+        "Female_Chest_Bigger": 0.5,
+        "Female_Chest_Smaller": 0.0,
+        "Female_Arm_Bigger": 0.375,
+        "Female_Arm_Smaller": 0.0,
+        "Female_Leg_Bigger": 0.375,
+        "Female_Leg_Smaller": 0.0,
+        "Female_Shoulders_Bigger": 0.5,
+        "Female_Shoulders_Smaller": 0.0
+    },
+    "explanation": "",
+    "confidence": 0.0,
+    "unit": "relative",
+    "note": "Shape-similar avatar using normalized proportions (privacy-safe, non-exact)"
+}

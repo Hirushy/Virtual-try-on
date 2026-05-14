@@ -1,0 +1,90 @@
+--- Average Body Detection ---
+Score: 0.6670 | Conf: 0.25
+Explanation: Body classified as Average with balanced torso and hip proportions.
+Weights: {'chest': 0.4, 'waist': 0.6, 'hips': 0.3}
+
+--- Heavy Body Detection ---
+Score: 0.7500 | Conf: 0.40
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4962184935648071, 'waist': 0.7833209866630189, 'hips': 0.3906587515189636}
+
+--- Heavy Body Detection ---
+Score: 0.7452 | Conf: 0.38
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.46351633015012317, 'waist': 0.8171154409527172, 'hips': 0.4171039901179865}
+
+--- Average Body Detection ---
+Score: 0.6672 | Conf: 0.25
+Explanation: Body classified as Average with balanced torso and hip proportions.
+Weights: {'chest': 0.4, 'waist': 0.6, 'hips': 0.3}
+
+--- Heavy Body Detection ---
+Score: 0.7337 | Conf: 0.97
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.45048719591487296, 'waist': 0.8019321576187672, 'hips': 0.4274262935500406}
+
+--- Heavy Body Detection ---
+Score: 0.7337 | Conf: 0.97
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4709363800475599, 'waist': 0.8018437826098175, 'hips': 0.40060904046145623}
+
+--- Heavy Body Detection ---
+Score: 0.8250 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4700561020920031, 'waist': 0.7523166892987658, 'hips': 0.42430715630818816}
+
+--- Heavy Body Detection ---
+Score: 0.8197 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.47862874455240506, 'waist': 0.7797327429726137, 'hips': 0.40745213716133566}
+
+--- Heavy Body Detection ---
+Score: 0.7003 | Conf: 0.65
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.484196529116885, 'waist': 0.7809069966719486, 'hips': 0.41051979513042886}
+
+--- Heavy Body Detection ---
+Score: 0.7875 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.47325662139156893, 'waist': 0.8165197698336092, 'hips': 0.4279775521091898}
+
+--- Heavy Body Detection ---
+Score: 0.7824 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.5047819436096233, 'waist': 0.8035729724290228, 'hips': 0.4126656619850583}
+
+--- Heavy Body Detection ---
+Score: 0.7003 | Conf: 0.65
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4635211988536215, 'waist': 0.7886180111812137, 'hips': 0.38357153218925205}
+
+--- Heavy Body Detection ---
+Score: 0.7003 | Conf: 0.65
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.46627806730269966, 'waist': 0.8145589730183411, 'hips': 0.37870579944755306}
+
+--- Heavy Body Detection ---
+Score: 0.7875 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4612745549774466, 'waist': 0.7555264345838504, 'hips': 0.38305129642050995}
+
+--- Heavy Body Detection ---
+Score: 0.7824 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.4918657479274948, 'waist': 0.7535791663408845, 'hips': 0.41277468768768133}
+
+--- Heavy Body Detection ---
+Score: 0.7824 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad due to prominent waist and chest proportions.
+Weights: {'chest': 0.5004492308678393, 'waist': 0.771436673573281, 'hips': 0.401375164363333}
+
+--- Heavy Body Detection ---
+Score: 1.0000 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad based on fuller torso proportions.
+Weights: {'chest': 0.47456166922480675, 'waist': 0.767341658080302, 'hips': 0.3852861264012137}
+
+--- Heavy Body Detection ---
+Score: 1.0000 | Conf: 1.00
+Explanation: Body classified as Heavy/Broad based on fuller torso proportions.
+Weights: {'chest': 0.5030087247045512, 'waist': 0.7643664561155685, 'hips': 0.41682221965617977}
+
