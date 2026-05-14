@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=Montserrat:wght@700;800;900&family=Playfair+Display:wght@400;500;600&family=Outfit:wght@300;400;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-black text-white font-sans;
+  font-family: 'Poppins', sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Optional: smooth glow hover for buttons or links */
+.btn-glow {
+  @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] hover:scale-105;
+}
