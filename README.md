@@ -2,7 +2,7 @@
 
 Fitora is a state-of-the-art AI Virtual Try-On application designed to revolutionize the online shopping experience. By combining high-fidelity 3D rendering with AI-driven fit analysis, Fitora allows users to visualize how clothing will look and fit on their unique body shape before making a purchase.
 
-## 🚀 Key Features
+##  Key Features
 
 - **Interactive 3D Hero** — A dynamic landing page featuring a high-quality animated walking avatar (`walk.glb`).
 - **Digital Twin Generation** — Photo-based or measurement-based 3D avatar creation.
@@ -10,7 +10,7 @@ Fitora is a state-of-the-art AI Virtual Try-On application designed to revolutio
 - **AI Fit Analysis** — Real-time fit heatmaps and brand-specific size recommendations.
 - **Secure Authentication** — Firebase authentication with additional PIN-based security.
 
-## 📸 Project Preview
+##  Project Preview
 
 ### 1. Cinematic Landing Page
 The entry point of Fitora, featuring a premium glassmorphic UI and an interactive 3D walking avatar.
@@ -32,7 +32,7 @@ A seamless interface to browse through collections and build custom outfits in r
 Upload your own clothes for AI analysis and receive instant fit recommendations based on brand sizing.
 ![Visual Search](react-r/public/screenshots/search.png)
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### Frontend
 - **React 18**
@@ -55,7 +55,7 @@ Upload your own clothes for AI analysis and receive instant fit recommendations 
 ### AI Integration
 - **Claude Vision (Anthropic)** for visual clothing analysis and recommendations
 
-## 📦 Project Structure
+## Project Structure
 
 ```text
 finals2/
@@ -63,7 +63,7 @@ finals2/
 └── server/       # Backend (FastAPI + AI Pipeline)
 ```
 
-## ⚙️ Getting Started
+## Getting Started
 
 ### 1. Frontend Setup (react-r)
 
@@ -119,22 +119,22 @@ finals2/
    uvicorn main:app --reload --port 8001
    ```
 
-## 📐 3D Assets
+## 3D Assets
 - **avatar.glb** — Main avatar model used for body fitting and measurements.
 - **walk.glb** — Animation-optimized avatar used in the homepage hero section.
 
-## 🔒 Security Features
+## Security Features
 - Firebase Authentication
 - Secure Session Management
 - Secondary PIN Verification
 - Protected API Access
 
-## 📄 License
+## License
 This project was developed for the final-year research project:
 **AI Virtual Try-On System**
 
-## 👨‍💻 Authors
-Developed by the **Fitora Development Team**.
+## Authors
+Developed by the **Hirushi Perera**.
 
 ---
 *Fitora — Your Perfect Fit, Virtually.*
