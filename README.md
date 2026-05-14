@@ -133,7 +133,7 @@ finals2/
 This project was developed for the final-year research project:
 **AI Virtual Try-On System**
 
-## Authors
+## Author
 Developed by the **Hirushi Perera**.
 
 ---
