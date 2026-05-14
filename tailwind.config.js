@@ -8,6 +8,9 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Poppins", "sans-serif"],
+        outfit: ["Outfit", "sans-serif"],
+        montserrat: ["Montserrat", "sans-serif"],
+        "serif-premium": ["Playfair Display", "serif"],
       },
       backgroundImage: {
         'hero-gradient': "linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.9))",
