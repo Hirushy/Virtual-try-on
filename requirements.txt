@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-multipart
+opencv-python
+mediapipe
+numpy
+pillow
+torch
+torchvision
+scikit-learn
+pandas
+tqdm
+motor
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+anthropic
