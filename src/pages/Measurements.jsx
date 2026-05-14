@@ -1,20 +1,42 @@
-// ✅ Measurements.jsx (FULL CORRECT FLOW)
-// ✅ FIXED: If avatarConfig exists -> show SAME avatar1.glb (sliders)
-// ✅ Else use your current new1.glb (avatarData) backend twin
-// ✅ Keeps your API_BASE fetch logic intact (not harming project)
+// ✅ FIXED: src/pages/Measurements.jsx
+// ✅ Size label (from filename prefix FM, FXL, MXXL etc.) received and forwarded
+// ✅ Measurements forwarded to Clothing_Cat and heatmap correctly
 
 "use client";
 
 import React, { useEffect, useMemo, useState, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Check, X } from "lucide-react";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { useAuth } from "../context/AuthContext";
+import heroBg from "../assets/pink.jpg";
 
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Html } from "@react-three/drei";
+import AvatarCanvas from "./measurements/AvatarCanvas";
 
-/* ========================= API BASE ========================= */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+import { db } from "../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001";
+
+// ── Size label → human readable ─────────────────────────────
+const SIZE_LABELS = {
+  XS: "Extra Small", S: "Small", M: "Medium",
+  L: "Large", XL: "Extra Large", XXL: "Double XL",
+};
+
+// ── Standard measurements per size ──────────────────────────
+const SIZE_MEASUREMENTS = {
+  XS: { chest: 82, waist: 64, hips: 88, shoulders: 34, arm: 50, leg: 70, height: 170 },
+  S: { chest: 90, waist: 72, hips: 96, shoulders: 40, arm: 56, leg: 80, height: 170 },
+  M: { chest: 98, waist: 80, hips: 104, shoulders: 46, arm: 62, leg: 90, height: 170 },
+  L: { chest: 106, waist: 88, hips: 112, shoulders: 52, arm: 68, leg: 100, height: 170 },
+  XL: { chest: 114, waist: 96, hips: 120, shoulders: 58, arm: 74, leg: 110, height: 170 },
+  XXL: { chest: 122, waist: 104, hips: 128, shoulders: 60, arm: 80, leg: 120, height: 170 },
+};
 
 /* ========================= Helpers ========================= */
 function clamp01(x) {
@@ -41,277 +63,271 @@ function isLockedContract(data) {
   );
 }
 
-function buildSummaryFromWeights(weights) {
-  const c = clamp01(weights?.Chest);
-  const w = clamp01(weights?.Waist);
-  const h = clamp01(weights?.Hips);
-
-  const avg = (c + w + h) / 3;
-
-  const bodyType = avg < 0.33 ? "Slim" : avg < 0.66 ? "Average" : "Broad";
-  const waistDesc = w < 0.33 ? "Slim waist" : w < 0.66 ? "Average waist" : "Broad waist";
-  const hipsDesc = h < 0.33 ? "Slim hips" : h < 0.66 ? "Average hips" : "Broad hips";
-  const chestDesc = c < 0.33 ? "Smaller chest" : c < 0.66 ? "Average chest" : "Broader chest";
-
-  return { bodyType, waistDesc, hipsDesc, chestDesc, c, w, h };
-}
-
-/* ========================= Slider Avatar1 Model (same as BodyDetails) ========================= */
-function SliderAvatarModel({
-  gender,
-  hairType,
-  height,
-  waist,
-  chest,
-  hips,
-  shoulders,
-  armLength,
-  legLength,
-}) {
-  const { scene } = useGLTF("/avatar1.glb");
-
-  const DEFAULTS = {
-    height: 170,
-    chest: 95,
-    waist: 75,
-    hips: 100,
-    shoulders: 44,
-    arm: 60,
-    leg: 80,
+// ✅ Use size label from filename prefix to determine body summary
+function getBodySummaryFromSize(sizeLabel) {
+  const summaryMap = {
+    XS: { bodyType: "Extra Slim", waistDesc: "Very slim waist", hipsDesc: "Very slim hips", chestDesc: "Very slim chest" },
+    S: { bodyType: "Slim", waistDesc: "Slim waist", hipsDesc: "Slim hips", chestDesc: "Slim chest" },
+    M: { bodyType: "Average", waistDesc: "Average waist", hipsDesc: "Average hips", chestDesc: "Average chest" },
+    L: { bodyType: "Broad", waistDesc: "Broad waist", hipsDesc: "Broad hips", chestDesc: "Broad chest" },
+    XL: { bodyType: "Full", waistDesc: "Full waist", hipsDesc: "Full hips", chestDesc: "Full chest" },
+    XXL: { bodyType: "Plus", waistDesc: "Plus waist", hipsDesc: "Plus hips", chestDesc: "Plus chest" },
   };
-
-  useEffect(() => {
-    if (!scene) return;
-
-    scene.traverse((obj) => {
-      if (obj.name === "FemaleRoot") obj.visible = gender === "female";
-      if (obj.name === "MaleRoot") obj.visible = gender === "male";
-
-      const heightScale = height / DEFAULTS.height;
-      if (
-        (obj.name === "FemaleRoot" && gender === "female") ||
-        (obj.name === "MaleRoot" && gender === "male")
-      ) {
-        obj.scale.y = heightScale;
-        obj.position.y = -(heightScale - 1) * 0.9;
-      }
-
-      if (obj.name.startsWith("hair_")) obj.visible = gender === "female" && obj.name === hairType;
-      if (obj.name === "male_short_hair") obj.visible = gender === "male";
-
-      if (obj.isMesh && obj.morphTargetDictionary && obj.morphTargetInfluences) {
-        const c = (x) => Math.max(0, Math.min(1, x));
-
-        const chestBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Chest_Bigger"]
-            : obj.morphTargetDictionary["Male_Chest_Bigger"];
-        const chestSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Chest_Smaller"]
-            : obj.morphTargetDictionary["Male_Chest_Smaller"];
-        const chestDelta = (chest - DEFAULTS.chest) / 30;
-        if (chestBigger !== undefined) obj.morphTargetInfluences[chestBigger] = c(Math.max(chestDelta, 0));
-        if (chestSmaller !== undefined) obj.morphTargetInfluences[chestSmaller] = c(Math.max(-chestDelta, 0));
-
-        const waistBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Waist_Bigger"]
-            : obj.morphTargetDictionary["Male_Waist_Bigger"];
-        const waistSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Waist_Smaller"]
-            : obj.morphTargetDictionary["Male_Waist_Smaller"];
-        if (waistBigger !== undefined) obj.morphTargetInfluences[waistBigger] = c(Math.max((waist - DEFAULTS.waist) / 30, 0));
-        if (waistSmaller !== undefined) obj.morphTargetInfluences[waistSmaller] = c(Math.max((DEFAULTS.waist - waist) / 30, 0));
-
-        const hipsBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Hips_Bigger"]
-            : obj.morphTargetDictionary["Male_Hips_Bigger"];
-        const hipsSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Hips_Smaller"]
-            : obj.morphTargetDictionary["Male_Hips_Smaller"];
-        if (hipsBigger !== undefined) obj.morphTargetInfluences[hipsBigger] = c(Math.max((hips - DEFAULTS.hips) / 30, 0));
-        if (hipsSmaller !== undefined) obj.morphTargetInfluences[hipsSmaller] = c(Math.max((DEFAULTS.hips - hips) / 30, 0));
-      }
-
-      if (obj.name === "arm_L" || obj.name === "arm_R") obj.scale.y = armLength / DEFAULTS.arm;
-      if (obj.name === "leg_L" || obj.name === "leg_R") obj.scale.y = legLength / DEFAULTS.leg;
-    });
-  }, [scene, gender, hairType, height, waist, chest, hips, shoulders, armLength, legLength]);
-
-  return <primitive object={scene} />;
+  return summaryMap[sizeLabel] || summaryMap["M"];
 }
 
-useGLTF.preload("/avatar1.glb");
-
-/* ========================= Backend new1 model ========================= */
-function BackendTwinModel({ gender = "female", avatarData }) {
-  const { scene } = useGLTF("/new1.glb");
-
-  useEffect(() => {
-    if (!scene) return;
-
-    // show/hide by gender group names
-    let foundGenderNodes = false;
-
-    scene.traverse((obj) => {
-      if (!obj.name) return;
-      const n = obj.name.toLowerCase();
-      const isFemale = n.includes("female");
-      const isMale = n.includes("male") && !n.includes("female");
-      if (isFemale || isMale) foundGenderNodes = true;
-    });
-
-    scene.traverse((obj) => {
-      if (!obj.name) return;
-      const n = obj.name.toLowerCase();
-      const isFemale = n.includes("female");
-      const isMale = n.includes("male") && !n.includes("female");
-
-      if (foundGenderNodes) {
-        if (isFemale) obj.visible = gender === "female";
-        if (isMale) obj.visible = gender === "male";
-      } else {
-        obj.visible = true;
-      }
-    });
-
-    // apply morph weights (Chest/Waist/Hips)
-    const weights = avatarData?.shape_key_weights;
-    if (weights) {
-      scene.traverse((obj) => {
-        if (!obj?.isMesh) return;
-        if (!obj.visible) return;
-        if (!obj.morphTargetDictionary || !obj.morphTargetInfluences) return;
-
-        for (const [k, v] of Object.entries(weights)) {
-          const idx = obj.morphTargetDictionary[k];
-          if (idx === undefined) continue;
-          obj.morphTargetInfluences[idx] = clamp01(v);
-        }
-
-        if (obj.material) obj.material.needsUpdate = true;
-      });
-    }
-  }, [scene, gender, avatarData]);
-
-  return <primitive object={scene} scale={0.35} position={[0, -10, 0]} />;
+// Legacy helper for when no size label is available
+function getBodySummary(size) {
+  const getBodyType = (s) => (s === "S" ? "Slim" : s === "S-M" ? "Balanced" : s === "M-L" ? "Broad" : "Heavy");
+  const getPart = (s) => (s === "S" ? "Slim" : s === "S-M" ? "Average" : "Broad");
+  const type = getBodyType(size);
+  const part = getPart(size);
+  return {
+    bodyType: type,
+    waistDesc: `${part} waist`,
+    hipsDesc: `${part} hips`,
+    chestDesc: `${part} chest`,
+  };
 }
 
-useGLTF.preload("/new1.glb");
+function detectSize(gender, height, chest, waist, hips, forceSize = null) {
+  if (forceSize) return forceSize;
+  const nChest = (chest - 70) / (140 - 70);
+  const nWaist = (waist - 55) / (130 - 55);
+  const nHips = (hips - 70) / (140 - 70);
+  const fullness = (nChest + nWaist + nHips) / 3;
+  if (fullness < 0.32) return "S";
+  if (fullness < 0.45) return "S-M";
+  if (fullness < 0.55) return "M-L";
+  return "XL";
+}
+
+useGLTF.preload("/avatar.glb");
 
 /* ========================= Page ========================= */
 export default function Measurements() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { token, user } = useAuth();
   const [avatarData, setAvatarData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [tempTwinName, setTempTwinName] = useState("");
 
   const passedAvatarData = useMemo(() => location.state?.avatarData || null, [location.state]);
   const avatarConfig = useMemo(() => location.state?.avatarConfig || null, [location.state]);
   const uploadedPhotos = useMemo(() => location.state?.photos || null, [location.state]);
 
-  // ✅ If avatarConfig exists, we DO NOT need backend data (we show avatar1)
-  // ✅ If no avatarConfig, use avatarData or fetch backend as you already do
-  useEffect(() => {
-    if (avatarConfig) {
-      setLoading(false);
-      return;
-    }
+  // ✅ Receive size label from filename detection (passed via Generated.jsx)
+  const passedSize = location.state?.size
+    || location.state?.avatarData?.size
+    || null;
 
-    if (passedAvatarData) {
-      setAvatarData(passedAvatarData);
-      setLoading(false);
-      return;
+  // ✅ Receive pre-computed measurements
+  const passedMeasurements = location.state?.measurements
+    || location.state?.bodyMeasurements
+    || null;
+
+  // ✅ Resolve the final measurements to use:
+  //    Priority: filename-based > passed measurements > avatarConfig
+  const resolvedMeasurements = useMemo(() => {
+    if (passedSize && SIZE_MEASUREMENTS[passedSize]) {
+      return SIZE_MEASUREMENTS[passedSize];
     }
+    if (passedMeasurements) return passedMeasurements;
+    if (avatarConfig) return { ...avatarConfig, height: avatarConfig.height || 170 };
+    return null;
+  }, [passedSize, passedMeasurements, avatarConfig]);
+
+  useEffect(() => {
+    if (avatarConfig) { setLoading(false); return; }
+    if (passedAvatarData) { setAvatarData(passedAvatarData); setLoading(false); return; }
 
     const fetchAvatarData = async () => {
       try {
-        const res = await fetch(`${API_BASE}/avatar-data`, { cache: "no-store" });
+        const res = await fetch(`${API_BASE}/api/avatar-data`, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-
-        if (isLockedContract(data)) setAvatarData(data);
-        else setAvatarData(null);
-      } catch (e) {
+        setAvatarData(isLockedContract(data) ? data : null);
+      } catch {
         setAvatarData(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchAvatarData();
   }, [passedAvatarData, avatarConfig]);
 
-  // Summary:
-  // - If avatarConfig: show text based on cm values
-  // - Else if avatarData: show based on weights (your current)
   const gender = (avatarConfig?.gender || avatarData?.gender || "female").toLowerCase();
-  const note = avatarData?.note || "Shape-similar avatar (relative proportions), not exact measurements.";
 
+  // ✅ Body summary: prefer filename-detected size, fallback to AI-detected
   const summary = useMemo(() => {
-    if (avatarConfig) {
-      const wChest = clamp01((avatarConfig.chest - 95) / 30);
-      const wWaist = clamp01((avatarConfig.waist - 75) / 30);
-      const wHips = clamp01((avatarConfig.hips - 100) / 30);
-      return buildSummaryFromWeights({ Chest: wChest, Waist: wWaist, Hips: wHips });
+    if (passedSize && SIZE_MEASUREMENTS[passedSize]) {
+      return { ...getBodySummaryFromSize(passedSize), size: passedSize };
     }
-    if (avatarData?.shape_key_weights) return buildSummaryFromWeights(avatarData.shape_key_weights);
-    return null;
-  }, [avatarConfig, avatarData]);
+    let size = "M-L";
+    if (avatarConfig) {
+      size = detectSize(gender, avatarConfig.height, avatarConfig.chest, avatarConfig.waist, avatarConfig.hips);
+    } else if (avatarData?.size) {
+      size = avatarData.size;
+    }
+    return { ...getBodySummary(size), size };
+  }, [passedSize, avatarConfig, avatarData, gender]);
 
-  const canProceed = !!avatarConfig || (!!avatarData && !loading);
+  const canProceed = !!avatarConfig || (!!avatarData && !loading) || !!passedSize;
+
+  /* ── Save to Favorites ── */
+  const handleSaveToFavorites = () => {
+    setTempTwinName(`Digital Twin ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+    setShowSaveModal(true);
+  };
+
+  const executeSaveTwin = async (finalName) => {
+    setSaving(true);
+    const newAvatar = {
+      name: finalName || `Digital Twin ${new Date().toLocaleTimeString()}`,
+      gender,
+      config: avatarConfig || null,
+      data: avatarData || null,
+      summary,
+      size: passedSize || summary.size,
+      createdAt: serverTimestamp(),
+    };
+
+    if (user) {
+      try {
+        await addDoc(collection(db, "users", user.uid, "favorites"), newAvatar);
+        alert("🚀 Saved to your Account Cloud!");
+      } catch (err) {
+        console.error("Firestore save failed:", err);
+        const existing = JSON.parse(localStorage.getItem("shadow_fit_avatars") || "[]");
+        localStorage.setItem(
+          "shadow_fit_avatars",
+          JSON.stringify([...existing, { ...newAvatar, id: Date.now(), createdAt: null }])
+        );
+        alert("Cloud save failed. Stored locally instead.");
+      }
+    } else {
+      const existing = JSON.parse(localStorage.getItem("shadow_fit_avatars") || "[]");
+      localStorage.setItem(
+        "shadow_fit_avatars",
+        JSON.stringify([
+          ...existing,
+          { ...newAvatar, id: Date.now(), createdAt: null, date: new Date().toLocaleDateString() },
+        ])
+      );
+      alert("⭐ Saved to Browser Storage (Guest Mode)");
+    }
+    setSaving(false);
+    setShowSaveModal(false);
+  };
+
+  // ✅ Navigate to Clothing_Cat — pass ALL size data + measurements
+  const handleStartTryOn = () => {
+    navigate("/measurements/clothing-cat", {
+      state: {
+        avatarData,
+        avatarConfig,
+        photos: uploadedPhotos,
+        measurements: resolvedMeasurements,    // ✅ correct measurements
+        bodyMeasurements: resolvedMeasurements,    // ✅ legacy key
+        size: passedSize || summary.size, // ✅ size label for fit pill
+      },
+    });
+  };
 
   return (
     <div className="relative min-h-screen bg-white text-[#1f1f1f] font-['Didact_Gothic',sans-serif] overflow-hidden">
+      <Motion.div
+        initial={{ scale: 1 }}
+        animate={{ scale: 1.08 }}
+        transition={{ duration: 15, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${heroBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          willChange: "transform",
+          opacity: 0.4,
+        }}
+      />
+
       <div className="absolute left-0 top-0 z-20 w-full">
         <Navbar />
       </div>
 
-      <section className="flex min-h-screen flex-col items-center justify-center gap-10 px-8 pb-24 pt-32 lg:flex-row lg:gap-20 lg:px-24">
-        {/* Left */}
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-10 px-8 pb-24 pt-32 lg:flex-row lg:gap-20 lg:px-24">
+
+        {/* ── Left column ── */}
         <Motion.div
           className="z-10 flex flex-1 flex-col items-center space-y-6 text-center lg:items-start lg:text-left"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-          <h1 className="text-4xl font-light leading-tight tracking-tight lg:text-6xl">
-            Choose How You’d Like to{" "}
-            <span className="font-medium text-[#8a7c65]">Try On Outfits</span>
+          <h1 className="text-7xl font-light leading-tight tracking-tighter lg:text-[100px]">
+            Choose How You'd Like to{" "}
+            <span className="font-bold text-[#8a7c65]">Try On Outfits</span>
           </h1>
 
-          <p className="max-w-md text-gray-600">
-            You can browse our <strong>Clothing Catalog</strong> or <strong>Upload Your Own Outfit</strong>.
+          <p className="max-w-xl text-xl text-gray-600/80 font-medium">
+            You can browse our <strong>Clothing Catalog</strong>.
           </p>
 
-          <div className="w-full max-w-md p-5 border border-[#dedad3] rounded-2xl bg-white/70 shadow-sm">
+          {/* ── Avatar summary card ── */}
+          <div className="w-full max-w-xl p-10 border border-[#dedad3] rounded-[2.5rem] bg-white/70 shadow-sm">
             {loading ? (
               <p className="text-sm text-gray-500">Loading avatar summary...</p>
             ) : summary ? (
               <>
-                <h3 className="text-lg font-medium text-[#8a7c65] mb-2">Digital Twin Summary</h3>
+                <h3 className="text-3xl font-black text-[#8a7c65] mb-8">Digital Twin Summary</h3>
 
-                <ul className="space-y-1 text-sm text-gray-700">
-                  <li>⚧ Gender: <b>{gender}</b></li>
-                  <li>🧍 Body type (hint): <b>{summary.bodyType}</b></li>
-                  <li>📐 Waist: <b>{summary.waistDesc}</b></li>
-                  <li>👖 Hips: <b>{summary.hipsDesc}</b></li>
-                  <li>🧥 Chest: <b>{summary.chestDesc}</b></li>
+                <ul className="space-y-3 text-xl text-gray-800">
+                  <li className="flex justify-between border-b border-black/5 pb-2">Gender: <b className="text-[#8a7c65]">{gender}</b></li>
+                  <li className="flex justify-between border-b border-black/5 pb-2">Body type: <b className="text-[#8a7c65]">{summary.bodyType}</b></li>
+                  <li className="flex justify-between border-b border-black/5 pb-2">Waist: <b className="text-[#8a7c65]">{summary.waistDesc}</b></li>
+                  <li className="flex justify-between border-b border-black/5 pb-2">Hips: <b className="text-[#8a7c65]">{summary.hipsDesc}</b></li>
+                  <li className="flex justify-between border-b border-black/5 pb-2">Chest: <b className="text-[#8a7c65]">{summary.chestDesc}</b></li>
                 </ul>
 
-                <div className="mt-3 text-xs text-gray-500">
-                  Weights — Chest: <b>{summary.c.toFixed(2)}</b> • Waist:{" "}
-                  <b>{summary.w.toFixed(2)}</b> • Hips: <b>{summary.h.toFixed(2)}</b>
+                {/* ✅ Show resolved measurements */}
+                {resolvedMeasurements && (
+                  <div className="mt-8 grid grid-cols-3 gap-3">
+                    {[
+                      ["Chest", resolvedMeasurements.chest, "cm"],
+                      ["Waist", resolvedMeasurements.waist, "cm"],
+                      ["Hips", resolvedMeasurements.hips, "cm"],
+                    ].map(([label, val, unit]) => (
+                      <div key={label} className="bg-[#f8f7f4] p-4 rounded-xl border border-gray-100 text-center shadow-sm">
+                        <span className="text-[12px] text-gray-400 uppercase font-bold block mb-1">{label}</span>
+                        <span className="text-xl font-black text-[#8a7c65]">{val}{unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {avatarData?.explanation && (
+                  <div className="mt-3 p-3 bg-[#8a7c65]/5 border border-[#8a7c65]/10 rounded-xl text-xs text-[#8a7c65] italic">
+                    {avatarData.explanation}
+                    {avatarData.confidence > 0 && (
+                      <span className="block mt-1 font-bold not-italic text-[#8a7c65]">
+                        Detection Confidence: {(avatarData.confidence * 100).toFixed(0)}%
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-6 text-sm text-gray-500 flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#8a7c65] animate-pulse" />
+                  Avatar Architecture Locked.
                 </div>
 
-                <p className="mt-3 text-xs text-gray-500">
-                  {avatarConfig ? "Slider-based avatar (same as BodyDetails)." : note}
-                </p>
+                <div className="border-t border-gray-100 mt-6 pt-6">
+                  <h4 className="text-[12px] uppercase tracking-[0.2em] text-[#8a7c65] font-black mb-3">System Status</h4>
+                  <p className="text-sm text-gray-500 font-medium">Avatar Basis (XXL) Locked. Real-time morphing active.</p>
+                </div>
               </>
             ) : (
               <>
@@ -328,30 +344,45 @@ export default function Measurements() {
             )}
           </div>
 
-          <div className="flex w-full max-w-sm flex-col gap-4 pt-6">
+          {/* ── Action buttons ── */}
+          <div className="flex w-full max-w-lg flex-col gap-5 pt-10">
+            {/* ✅ Start Try-On — passes size + measurements */}
             <Motion.button
-              onClick={() =>
-                navigate("/measurements/clothing-cat", {
-                  state: { avatarData, avatarConfig, photos: uploadedPhotos },
-                })
-              }
-              className="w-full px-6 py-4 font-sans font-semibold text-white transition rounded-full shadow-md bg-gradient-to-r from-[#8a7c65] to-[#3b3a37] hover:opacity-90"
+              onClick={handleStartTryOn}
+              className="w-full px-10 py-6 text-2xl font-sans font-black text-white transition rounded-full shadow-2xl bg-[#1f1f1f] hover:bg-black"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               disabled={!canProceed}
             >
-              Clothing Catalog
+              Start Try-On Studio
             </Motion.button>
 
-          
+            <Motion.button
+              disabled={!canProceed || saving}
+              onClick={handleSaveToFavorites}
+              className={`w-full px-10 py-6 text-xl font-sans font-black border-2 transition rounded-full shadow-lg ${saving
+                ? "bg-gray-100 text-gray-400 border-gray-200"
+                : "text-[#8a7c65] border-[#8a7c65] hover:bg-[#8a7c65]/5"
+                }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {saving ? "Saving..." : user ? "Add to favourites" : "Save to Favorites"}
+            </Motion.button>
 
             <Motion.button
               onClick={() =>
                 navigate("/generated", {
-                  state: { avatarData, avatarConfig, photos: uploadedPhotos },
+                  state: {
+                    avatarData,
+                    avatarConfig,
+                    photos: uploadedPhotos,
+                    measurements: resolvedMeasurements,
+                    size: passedSize || summary.size,
+                  },
                 })
               }
-              className="text-[#8a7c65] underline underline-offset-4 hover:text-[#6e604e] transition-all duration-300 font-medium"
+              className="text-gray-400 text-base hover:text-[#8a7c65] transition-all duration-300 font-black text-center mt-4"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
@@ -360,69 +391,69 @@ export default function Measurements() {
           </div>
         </Motion.div>
 
-        {/* Right — 3D Preview (THIS is the main fix) */}
+        {/* ── Right column — 3D preview ── */}
         <Motion.div
           className="relative flex flex-1 items-center justify-center"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
         >
-          <div className="relative w-[580px] h-[700px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-md">
-            <div className="absolute z-10 ml-4 mt-4 rounded-full border border-gray-200 bg-white/80 px-3 py-1 text-xs text-gray-600">
-              {avatarConfig ? "Same Avatar: BodyDetails (avatar1.glb)" : loading ? "Loading..." : "Backend Avatar (new1.glb)"}
+          <div className="bg-gray-100/30 border border-gray-200/50 shadow-2xl w-[1000px] h-[1100px] rounded-[4rem] overflow-hidden backdrop-blur-md">
+            <div className="absolute z-10 ml-10 mt-10 rounded-full border border-gray-200 bg-white/80 px-6 py-2 text-sm font-black text-gray-600">
+              {avatarConfig ? "Avatar (BodyDetails)" : loading ? "Loading..." : "Backend Avatar (AI Detected)"}
             </div>
-
             <div className="h-full w-full">
-              <Canvas
-                camera={{
-                  position: avatarConfig ? [0, 0, 5] : [0, 2.0, 22],
-                  fov: avatarConfig ? 50 : 30,
-                  near: 0.1,
-                  far: 5000,
-                }}
-              >
-                <ambientLight intensity={0.9} />
-                <directionalLight position={[3, 5, 2]} intensity={1.4} />
-
-                <Suspense
-                  fallback={
-                    <Html center>
-                      <div className="rounded-full border border-gray-200 bg-white/80 px-3 py-2 text-xs text-gray-600 shadow">
-                        Loading 3D avatar...
-                      </div>
-                    </Html>
-                  }
-                >
-                  <Environment preset="city" />
-
-                  {/* ✅ FIX: Choose model based on avatarConfig */}
-                  {avatarConfig ? (
-                    <SliderAvatarModel
-                      gender={avatarConfig.gender}
-                      hairType={avatarConfig.hair}
-                      height={avatarConfig.height}
-                      waist={avatarConfig.waist}
-                      chest={avatarConfig.chest}
-                      hips={avatarConfig.hips}
-                      shoulders={avatarConfig.shoulders}
-                      armLength={avatarConfig.armLength}
-                      legLength={avatarConfig.legLength}
-                    />
-                  ) : (
-                    <BackendTwinModel gender={gender} avatarData={avatarData} />
-                  )}
-                </Suspense>
-
-                <OrbitControls enablePan={false} minDistance={2} maxDistance={200} target={[0, 1.1, 0]} />
-              </Canvas>
+              <AvatarCanvas
+                avatarConfig={avatarConfig}
+                avatarData={avatarData}
+                gender={gender}
+              />
             </div>
           </div>
         </Motion.div>
       </section>
 
-      <footer className="w-full h-16 bg-[#f2f2f2] border-t border-gray-200 flex items-center justify-center text-sm text-gray-600 tracking-wide">
-        © {new Date().getFullYear()} Virtual Try-On — Designed with elegance & innovation.
-      </footer>
+      <Footer isLightPage={true} />
+
+      {/* ── SAVING MODAL ── */}
+      <AnimatePresence>
+        {showSaveModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowSaveModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+            <Motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#8a7c65] rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <Sparkles size={20} />
+                  </div>
+                  <h3 className="text-xl font-bold uppercase tracking-widest text-gray-800">Name Your Twin</h3>
+                </div>
+                <button onClick={() => setShowSaveModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#8a7c65] mb-2 block">Twin Name</label>
+                  <input autoFocus type="text" value={tempTwinName} onChange={(e) => setTempTwinName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && executeSaveTwin(tempTwinName)}
+                    placeholder="e.g. My Profile" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8a7c65]/20 focus:bg-white text-gray-800 font-bold transition-all" />
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button onClick={() => setShowSaveModal(false)} className="flex-1 py-4 text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+                  <button onClick={() => executeSaveTwin(tempTwinName)} disabled={saving || !tempTwinName.trim()}
+                    className="flex-1 py-4 bg-[#8a7c65] text-white rounded-2xl font-bold uppercase tracking-widest text-sm shadow-xl shadow-[#8a7c65]/30 hover:bg-[#7a6c55] disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                    {saving ? "Saving..." : <><Check size={18} /> Confirm</>}
+                  </button>
+                </div>
+              </div>
+            </Motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

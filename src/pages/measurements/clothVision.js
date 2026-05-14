@@ -7,7 +7,7 @@
   ✅ If backend fails: fallback to client-side (dominant color + filename guessing)
 */
 
-const API_BASE = "http://127.0.0.1:8001";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001";
 
 export async function getDominantHexFromImage(file) {
   try {

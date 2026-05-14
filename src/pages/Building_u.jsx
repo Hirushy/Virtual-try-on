@@ -1,177 +1,40 @@
-// ✅ Building_u.jsx (FULL) — SAFE: keeps your page and ADDS the SAME configured 3D preview
-// ✅ Reads avatarConfig passed from BodyDetails and renders avatar1.glb with same settings
-
 "use client";
-
-import React, { useEffect, useState, useMemo, Suspense } from "react";
-import { motion as Motion } from "framer-motion";
-import Navbar from "../components/Navbar";
+import React, { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
+import { CheckCircle2, Scan, Layers, Box, ArrowLeft } from "lucide-react";
+import { useGLTF } from "@react-three/drei"; // ← preload GLB here
+import heroBg from "../assets/pink.jpg";
+import Footer from "../components/Footer";
 
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
-
-/* ========================= SAME AvatarModel (copy from BodyDetails) ========================= */
-function AvatarModel({
-  gender,
-  hairType,
-  height,
-  waist,
-  chest,
-  hips,
-  shoulders,
-  armLength,
-  legLength,
-}) {
-  const { scene } = useGLTF("/avatar1.glb");
-
-  const DEFAULTS = {
-    height: 170,
-    chest: 95,
-    waist: 75,
-    hips: 100,
-    shoulders: 44,
-    arm: 60,
-    leg: 80,
-  };
-
-  useEffect(() => {
-    if (!scene) return;
-
-    scene.traverse((obj) => {
-      if (obj.name === "FemaleRoot") obj.visible = gender === "female";
-      if (obj.name === "MaleRoot") obj.visible = gender === "male";
-
-      const heightScale = height / DEFAULTS.height;
-      if (
-        (obj.name === "FemaleRoot" && gender === "female") ||
-        (obj.name === "MaleRoot" && gender === "male")
-      ) {
-        obj.scale.y = heightScale;
-        obj.position.y = -(heightScale - 1) * 0.9;
-      }
-
-      if (obj.name.startsWith("hair_")) {
-        obj.visible = gender === "female" && obj.name === hairType;
-      }
-      if (obj.name === "male_short_hair") obj.visible = gender === "male";
-
-      if (obj.isMesh && obj.morphTargetDictionary && obj.morphTargetInfluences) {
-        const clamp01 = (x) => Math.max(0, Math.min(1, x));
-
-        const armBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Arm_Bigger"]
-            : obj.morphTargetDictionary["Male_Arm_Bigger"];
-        const armSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Arm_Smaller"]
-            : obj.morphTargetDictionary["Male_Arm_Smaller"];
-        const armDelta = (armLength - DEFAULTS.arm) / 40;
-        if (armBigger !== undefined) obj.morphTargetInfluences[armBigger] = clamp01(Math.max(armDelta, 0));
-        if (armSmaller !== undefined) obj.morphTargetInfluences[armSmaller] = clamp01(Math.max(-armDelta, 0));
-
-        const legBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Leg_Bigger"]
-            : obj.morphTargetDictionary["Male_Leg_Bigger"];
-        const legSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Leg_Smaller"]
-            : obj.morphTargetDictionary["Male_Leg_Smaller"];
-        const legDelta = (legLength - DEFAULTS.leg) / 40;
-        if (legBigger !== undefined) obj.morphTargetInfluences[legBigger] = clamp01(Math.max(legDelta, 0));
-        if (legSmaller !== undefined) obj.morphTargetInfluences[legSmaller] = clamp01(Math.max(-legDelta, 0));
-
-        const chestBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Chest_Bigger"]
-            : obj.morphTargetDictionary["Male_Chest_Bigger"];
-        const chestSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Chest_Smaller"]
-            : obj.morphTargetDictionary["Male_Chest_Smaller"];
-        const chestDelta = (chest - DEFAULTS.chest) / 30;
-        if (chestBigger !== undefined) obj.morphTargetInfluences[chestBigger] = clamp01(Math.max(chestDelta, 0));
-        if (chestSmaller !== undefined) obj.morphTargetInfluences[chestSmaller] = clamp01(Math.max(-chestDelta, 0));
-
-        const waistBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Waist_Bigger"]
-            : obj.morphTargetDictionary["Male_Waist_Bigger"];
-        const waistSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Waist_Smaller"]
-            : obj.morphTargetDictionary["Male_Waist_Smaller"];
-        if (waistBigger !== undefined)
-          obj.morphTargetInfluences[waistBigger] = clamp01(Math.max((waist - DEFAULTS.waist) / 30, 0));
-        if (waistSmaller !== undefined)
-          obj.morphTargetInfluences[waistSmaller] = clamp01(Math.max((DEFAULTS.waist - waist) / 30, 0));
-
-        const hipsBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Hips_Bigger"]
-            : obj.morphTargetDictionary["Male_Hips_Bigger"];
-        const hipsSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Hips_Smaller"]
-            : obj.morphTargetDictionary["Male_Hips_Smaller"];
-        if (hipsBigger !== undefined)
-          obj.morphTargetInfluences[hipsBigger] = clamp01(Math.max((hips - DEFAULTS.hips) / 30, 0));
-        if (hipsSmaller !== undefined)
-          obj.morphTargetInfluences[hipsSmaller] = clamp01(Math.max((DEFAULTS.hips - hips) / 30, 0));
-
-        const shouldersBigger =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Shoulders_Bigger"]
-            : obj.morphTargetDictionary["Male_Shoulders_Bigger"];
-        const shouldersSmaller =
-          gender === "female"
-            ? obj.morphTargetDictionary["Female_Shoulders_Smaller"]
-            : obj.morphTargetDictionary["Male_Shoulders_Smaller"];
-        if (shouldersBigger !== undefined)
-          obj.morphTargetInfluences[shouldersBigger] = clamp01(Math.max((shoulders - DEFAULTS.shoulders) / 20, 0));
-        if (shouldersSmaller !== undefined)
-          obj.morphTargetInfluences[shouldersSmaller] = clamp01(Math.max((DEFAULTS.shoulders - shoulders) / 20, 0));
-      }
-
-      if (obj.name === "arm_L" || obj.name === "arm_R") obj.scale.y = armLength / DEFAULTS.arm;
-      if (obj.name === "leg_L" || obj.name === "leg_R") obj.scale.y = legLength / DEFAULTS.leg;
-    });
-  }, [scene, gender, hairType, height, waist, chest, hips, shoulders, armLength, legLength]);
-
-  return <primitive object={scene} />;
+/* ─────────────────────────────────────────────
+   SIZE DETECTION
+───────────────────────────────────────────── */
+function detectSize(gender, height, chest, waist, hips) {
+  const nChest = (chest - 70) / (140 - 70);
+  const nWaist = (waist - 55) / (130 - 55);
+  const nHips = (hips - 70) / (140 - 70);
+  const fullness = (nChest + nWaist + nHips) / 3;
+  if (fullness < 0.32) return "S";
+  if (fullness < 0.45) return "S-M";
+  if (fullness < 0.55) return "M-L";
+  return "XL";
 }
 
-useGLTF.preload("/avatar1.glb");
+/* ─────────────────────────────────────────────
+   PHASE CONFIG
+───────────────────────────────────────────── */
+const PHASES = [
+  { id: 0, icon: Scan, label: "Reading measurements", sub: "Parsing your body data" },
+  { id: 1, icon: Layers, label: "Mapping shape keys", sub: "Translating to 3D morphs" },
+  { id: 2, icon: Box, label: "Building your avatar", sub: "Finalising geometry" },
+];
 
-function AvatarPreview({ cfg }) {
-  return (
-    <div className="w-72 h-72 bg-[#f8f8f8] border border-[#8a7c65]/50 shadow-lg rounded-2xl overflow-hidden">
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} />
-        <Suspense fallback={null}>
-          <AvatarModel
-            gender={cfg.gender}
-            hairType={cfg.hair}
-            height={cfg.height}
-            waist={cfg.waist}
-            chest={cfg.chest}
-            hips={cfg.hips}
-            shoulders={cfg.shoulders}
-            armLength={cfg.armLength}
-            legLength={cfg.legLength}
-          />
-        </Suspense>
-        <OrbitControls enablePan={false} />
-      </Canvas>
-    </div>
-  );
-}
-
+/* ─────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────── */
 export default function Building_u() {
-  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -179,161 +42,241 @@ export default function Building_u() {
     () => location.state?.photos || { front: null, back: null },
     [location.state]
   );
-
-  // ✅ get the customized avatar settings from BodyDetails
-  const avatarConfig = useMemo(() => {
-    return (
-      location.state?.avatarConfig || {
-        gender: "female",
-        hair: "hair_long",
-        height: 170,
-        waist: 75,
-        chest: 95,
-        hips: 100,
-        shoulders: 44,
-        armLength: 60,
-        legLength: 80,
-      }
-    );
-  }, [location.state]);
-
-  const fadeUp = {
-    initial: { opacity: 0, y: 30 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
+  const avatarConfig = useMemo(
+    () => location.state?.avatarConfig || {
+      gender: "female", hair: "hair_long",
+      height: 170, waist: 75, chest: 95, hips: 100,
+      shoulders: 44, armLength: 60, legLength: 80,
     },
-  };
+    [location.state]
+  );
 
-  const steps = [
-    "Analyzing body measurements...",
-    "Reconstructing your digital structure...",
-    "Mapping realistic skin and textures...",
-    "Estimating posture and proportions...",
-    "Generating facial details...",
-    "Applying 3D mesh refinements...",
-    "Rendering your virtual twin...",
-    "Finalizing high-quality output...",
-    "Your avatar is ready to view!",
+  const shapeKeys = [
+    { name: "Waist", value: Math.max(0, Math.min(100, ((avatarConfig.waist - 55) / 75) * 100)) },
+    { name: "Chest", value: Math.max(0, Math.min(100, ((avatarConfig.chest - 70) / 70) * 100)) },
+    { name: "Hips", value: Math.max(0, Math.min(100, ((avatarConfig.hips - 70) / 70) * 100)) },
+    { name: "Shoulders", value: Math.max(0, Math.min(100, ((avatarConfig.shoulders - 30) / 30) * 100)) },
   ];
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 1, 100));
-    }, 60);
-    return () => clearInterval(interval);
-  }, []);
+    // 🚀 Preload — starts immediately on mount in background
+    useGLTF.preload("/avatar.glb");
 
-  // ✅ after 100% go to Generated with SAME measurements config
-  useEffect(() => {
-    if (progress >= 100) {
-      const timeout = setTimeout(() => {
-        navigate("/generated", { state: { photos: uploadedPhotos, avatarConfig } });
-      }, 600);
-      return () => clearTimeout(timeout);
-    }
-  }, [progress, navigate, uploadedPhotos, avatarConfig]);
+    // ⚡ Fast sequence (Total ~1.5s)
+    const t1 = setTimeout(() => setPhase(1), 500); 
+    const t2 = setTimeout(() => setPhase(2), 1000); 
+    const t3 = setTimeout(() => {
+      navigate("/generated", {
+        state: {
+          photos: uploadedPhotos,
+          avatarConfig,
+          avatarData: location.state?.avatarData,
+        },
+      });
+    }, 1500); 
 
-  const currentStepIndex = Math.floor((progress / 100) * steps.length);
+    return () => [t1, t2, t3].forEach(clearTimeout);
+  }, [navigate, uploadedPhotos, avatarConfig, location.state]);
+
+  const detectedSize = detectSize(
+    avatarConfig.gender, avatarConfig.height,
+    avatarConfig.chest, avatarConfig.waist, avatarConfig.hips
+  );
 
   return (
-    <div className="relative min-h-screen bg-white text-[#1f1f1f] overflow-hidden font-['Didact_Gothic',sans-serif]">
-      <div className="absolute left-0 top-0 z-20 w-full">
-        <Navbar />
+    <div
+      className="relative w-screen h-screen overflow-hidden bg-white text-slate-900 antialiased flex flex-col"
+      style={{ fontFamily: "'Didact Gothic', sans-serif" }}
+    >
+      {/* ── LAYER 0: Cinematic pink background ── */}
+      <motion.div
+        initial={{ scale: 1 }}
+        animate={{ scale: 1.08 }}
+        transition={{ duration: 15, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${heroBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          willChange: "transform",
+          opacity: 0.4,
+        }}
+      />
+
+      {/* ── TOP HUD ── */}
+      <header className="relative z-20 h-28 flex justify-between items-center px-16 flex-shrink-0">
+        <div
+          className="flex items-center gap-4 cursor-pointer group"
+          onClick={() => navigate("/")}
+        >
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-900 shadow-xl group-hover:scale-125 transition-transform" />
+          <h1 className="text-2xl font-black italic tracking-tighter text-slate-900">
+            STUDIO<span className="text-slate-400 opacity-50">.</span>BASE
+          </h1>
+        </div>
+        <div className="hidden lg:flex flex-col items-end justify-center">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Model Sequence</span>
+          <span className="text-xs font-bold text-slate-900 tracking-wider font-mono uppercase">
+            ID_STUDIO_BASE
+          </span>
+        </div>
+      </header>
+
+      {/* ── CENTERED CONTENT ── */}
+      <div className="relative z-20 flex-1 flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-xl bg-white/20 backdrop-blur-2xl border border-white/20 rounded-[4rem] p-16 flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.15)] ring-1 ring-white/30"
+        >
+          {/* Spinner */}
+          <div className="flex justify-center mb-10">
+            <motion.div
+              className="w-14 h-14 border-4 border-slate-200 border-t-slate-900 rounded-full"
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            />
+          </div>
+
+          {/* Header */}
+          <div className="mb-12 text-center">
+            <p className="text-[13px] font-black tracking-[0.4em] uppercase text-slate-500 mb-4">Step 3 of 4</p>
+            <h2 className="text-4xl font-black tracking-tighter text-slate-900 leading-tight">
+              Generating your<br />digital twin
+            </h2>
+          </div>
+
+          {/* Phase steps */}
+          <div className="space-y-3 mb-8">
+            {PHASES.map((p) => {
+              const Icon = p.icon;
+              const isDone = phase > p.id;
+              const isActive = phase === p.id;
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: p.id * 0.1 }}
+                  className={`flex items-center gap-4 p-4 rounded-[1.5rem] border transition-all duration-500 ${isActive ? "bg-white/60 border-black/10 shadow-sm"
+                      : isDone ? "bg-white/40 border-black/5"
+                        : "bg-transparent border-black/5 opacity-40"
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isActive || isDone ? "bg-slate-900 shadow-lg" : "bg-black/10"
+                    }`}>
+                    {isDone
+                      ? <CheckCircle2 size={20} className="text-white" />
+                      : <Icon size={20} className={isActive ? "text-white" : "text-slate-400"} />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[14px] font-black uppercase tracking-[0.15em] ${isActive || isDone ? "text-slate-900" : "text-slate-400"
+                      }`}>{p.label}</p>
+                    <p className="text-[12px] text-slate-400 font-medium mt-1">{p.sub}</p>
+                  </div>
+                  {isActive && (
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map(i => (
+                        <motion.div
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full bg-slate-900"
+                          animate={{ opacity: [0.2, 1, 0.2] }}
+                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Data card */}
+          <AnimatePresence mode="wait">
+            {phase === 0 && (
+              <motion.div
+                key="meas"
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="bg-white/40 border border-black/5 rounded-[2rem] p-6"
+              >
+                <p className="text-[12px] font-black tracking-[0.3em] uppercase text-slate-500 mb-6">Measurements</p>
+                <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                  {[
+                    ["Height", avatarConfig.height],
+                    ["Chest", avatarConfig.chest],
+                    ["Waist", avatarConfig.waist],
+                    ["Hips", avatarConfig.hips],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between items-baseline border-b border-black/5 pb-2">
+                      <span className="text-[12px] text-slate-500 uppercase tracking-widest font-black">{k}</span>
+                      <span className="text-lg font-black text-slate-900 font-mono italic">
+                        {v}<small className="text-[10px] ml-1 opacity-40 not-italic font-normal">cm</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {phase === 1 && (
+              <motion.div
+                key="shapes"
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="bg-white/40 border border-black/5 rounded-[2rem] p-6 space-y-4"
+              >
+                <p className="text-[10px] font-black tracking-[0.25em] uppercase text-slate-400">Shape Keys</p>
+                {shapeKeys.map((k, i) => (
+                  <div key={k.name}>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black">{k.name}</span>
+                      <span className="text-[10px] text-slate-900 font-black font-mono italic">{k.value.toFixed(0)}%</span>
+                    </div>
+                    <div className="h-[2px] w-full bg-black/5 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-slate-900 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${k.value}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {phase === 2 && (
+              <motion.div
+                key="done"
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="bg-white/40 border border-black/5 rounded-[2rem] p-6 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-900">Avatar Ready</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Redirecting to your result…</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-6 border-t border-black/5" />
+
+          {/* Back */}
+          <button
+            onClick={() => navigate("/body-details", { state: { photos: uploadedPhotos, avatarConfig } })}
+            className="mt-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors duration-200"
+          >
+            <ArrowLeft size={12} /> Back to body details
+          </button>
+        </motion.div>
       </div>
 
-      <section className="flex flex-col-reverse items-center justify-center gap-16 px-8 pb-24 pt-32 lg:flex-row lg:px-24">
-        <Motion.div
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          className="flex max-w-lg flex-1 flex-col items-center space-y-6 text-center lg:items-start lg:text-left"
-        >
-          <div className="flex justify-center gap-4 lg:justify-start">
-            {uploadedPhotos.front && (
-              <img
-                src={uploadedPhotos.front}
-                alt="Front"
-                className="object-cover w-24 h-32 border border-[#8a7c65]/50 rounded-lg shadow-md"
-              />
-            )}
-            {uploadedPhotos.back && (
-              <img
-                src={uploadedPhotos.back}
-                alt="Back"
-                className="object-cover w-24 h-32 border border-[#8a7c65]/50 rounded-lg shadow-md"
-              />
-            )}
-          </div>
-
-          <h1 className="text-5xl font-light leading-tight tracking-tight text-[#1f1f1f]">
-            Building Your <br />
-            <span className="font-medium text-[#8a7c65]">Virtual Avatar</span>
-          </h1>
-
-          <p className="max-w-md text-base leading-relaxed text-gray-600">
-            Please wait while your body details are processed to generate your 3D avatar. This won’t take long.
-          </p>
-
-          <div className="relative my-8 h-40 w-40">
-            <svg className="h-40 w-40" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" stroke="#e5e5e5" strokeWidth="10" fill="none" />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="#8a7c65"
-                strokeWidth="10"
-                fill="none"
-                strokeDasharray={2 * Math.PI * 45}
-                strokeDashoffset={(1 - progress / 100) * 2 * Math.PI * 45}
-                strokeLinecap="round"
-                transform="rotate(-90 50 50)"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-2xl font-medium text-[#8a7c65]">
-              {progress}%
-            </div>
-          </div>
-
-          <div className="w-full max-w-sm">
-            {steps.map((step, idx) => (
-              <p
-                key={idx}
-                className={`text-sm mb-1 transition-all duration-300 ${
-                  idx <= currentStepIndex ? "text-[#8a7c65] font-medium" : "text-gray-400"
-                }`}
-              >
-                {step}
-              </p>
-            ))}
-          </div>
-
-          <Motion.button
-            onClick={() => navigate("/body-details", { state: { photos: uploadedPhotos, avatarConfig } })}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="text-[#8a7c65] underline underline-offset-4 hover:text-[#6e604e] transition-all duration-300 font-medium"
-          >
-            ← Back To Body Details
-          </Motion.button>
-        </Motion.div>
-
-        {/* ✅ Right side: REAL configured 3D avatar preview */}
-        <Motion.div
-          className="flex flex-1 items-center justify-center"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <AvatarPreview cfg={avatarConfig} />
-        </Motion.div>
-      </section>
-
-      <footer className="w-full h-16 bg-[#f2f2f2] border-t border-gray-200 flex items-center justify-center text-sm text-gray-600 tracking-wide">
-        © {new Date().getFullYear()} Virtual Try-On — Designed with simplicity & style.
-      </footer>
+      {/* ── FOOTER ── */}
+      <Footer isLightPage={true} compact={true} />
     </div>
   );
 }

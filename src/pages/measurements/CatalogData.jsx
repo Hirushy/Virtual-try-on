@@ -1,370 +1,337 @@
-// src/pages/measurements/catalogData.js
+// src/pages/measurements/CatalogData.jsx
 "use client";
 
-import hh from "../../assets/hh.jpg";
-import { SIZE_TABLES, WOMEN_SIZE_GUIDES } from "./sizeGuides";
+import { SIZE_TABLES, WOMEN_SIZE_GUIDES } from "./SizeGuides";
 
-const STYLE_IMG = "/images/ap.jpg";
+// ─────────────────────────────────────────────────────────────────────────────
+//  ASSET IMPORTS
+//  These are flat PNG files sitting directly inside src/assets/
+//  e.g.  src/assets/Blouses.png,  src/assets/CropTops.png  etc.
+//
+//  ► "Shoes" does NOT exist in your assets folder, so we reuse Sneakers.
+//  ► If any file is still missing, rename it to match the import below.
+// ─────────────────────────────────────────────────────────────────────────────
+import imgBlouses from "../../assets/Blouses.png";
+import imgCropTops from "../../assets/CropTops.png";
+import imgTShirts from "../../assets/TShirts.png";
+import imgJeans from "../../assets/Jeans.png";
+import imgTrousers from "../../assets/Trousers.png";
+import imgSkirts from "../../assets/Skirts.png";
+import imgShorts from "../../assets/Shorts.png";
+import imgMaxi from "../../assets/Maxi.png";
+import imgMidi from "../../assets/Midi.png";
+import imgMini from "../../assets/Mini.png";
+import imgSneakers from "../../assets/Sneakers.png";
+import imgSlippers from "../../assets/Slippers.png";
+import imgHats from "../../assets/Hats.png";
+import imgLoungewear from "../../assets/Loungewear.png";
+import imgActivewear from "../../assets/Activewear.png";
+import imgShirts from "../../assets/Shirts.png";
+import imgCollarless from "../../assets/Collarless.png";
+import imgPants from "../../assets/Pants.png";
+
+// No "Shoes.png" in your assets — reuse Sneakers as fallback
+const imgShoes = imgSneakers;
+const imgDefault = imgTShirts;
+
+// ─── SUBCAT ICONS ─────────────────────────────────────────────
+export const SUBCAT_ICONS = {
+  "Blouses": imgBlouses,
+  "Crop Tops": imgCropTops,
+  "T-Shirts": imgTShirts,
+  "Jeans": imgJeans,
+  "Trousers": imgTrousers,
+  "Skirts": imgSkirts,
+  "Shorts": imgShorts,
+  "Maxi": imgMaxi,
+  "Midi": imgMidi,
+  "Mini": imgMini,
+  "Sneakers": imgSneakers,
+  "Slippers": imgSlippers,
+  "Shoes": imgShoes,
+  "Hats": imgHats,
+  "Loungewear": imgLoungewear,
+  "Activewear": imgActivewear,
+  "Shirts": imgShirts,
+  "Collarless": imgCollarless,
+  "Polo / Henley": imgShirts,
+  "Pants": imgPants,
+  "Styles": imgHats,
+  "Models": imgHats,
+  "Accessories": imgLoungewear, // Changed from imgHats to imgLoungewear for better distinction
+  "_default": imgDefault,
+};
+
+// ─── SUBCAT BACKGROUND COLORS ─────────────────────────────────
+export const SUBCAT_COLORS = {
+  "Blouses": "#fce4f3",
+  "Crop Tops": "#e4fce8",
+  "T-Shirts": "#e4eefe",
+  "Jeans": "#dbeafe",
+  "Trousers": "#ede8ff",
+  "Skirts": "#f3e8ff",
+  "Shorts": "#fef9e4",
+  "Maxi": "#fdecea",
+  "Midi": "#fce4f3",
+  "Mini": "#ede8ff",
+  "Sneakers": "#fef9e4",
+  "Slippers": "#e4fce8",
+  "Shoes": "#fdecea",
+  "Hats": "#f0ece8",
+  "Loungewear": "#e4fce8",
+  "Activewear": "#e4f8fc",
+  "Shirts": "#ede8ff",
+  "Collarless": "#e4fce8",
+  "Polo / Henley": "#e4fce8",
+  "Pants": "#ede8ff",
+  "Styles": "#fff7ed",
+  "Models": "#f9fafb",
+  "Accessories": "#f1f5f9",
+  "_default": "#f5f5f5",
+};
 
 /* =====================================================================================
-   ✅ MASTER OUTFIT DATABASE (Women + Men)
+   OUTFITS — all mesh names exactly match the GLB scene
    ===================================================================================== */
-
 const OUTFITS = {
   Women: {
     Tops: {
-      "T-shirts": [
-        { style: "Casual", outfit: "Graphic tee + jeans", sizeRef: "Bust", fabrics: ["Cotton"] },
-        { style: "Streetwear", outfit: "Oversized tee + cargos", sizeRef: "Bust & Shoulder Width", fabrics: ["Cotton", "Jersey Knit"] },
-        { style: "Smart Casual", outfit: "Plain fitted tee + blazer", sizeRef: "Bust & Length", fabrics: ["Cotton", "Spandex"] },
-        { style: "Athleisure", outfit: "Sport tee + leggings", sizeRef: "Bust (stretch fit)", fabrics: ["Polyester", "Spandex"] },
+      "Blouses": [
+        { mesh: "Top_Blouse1", outfit: "LKR 2850", fabrics: ["Silk", "Satin"] },
+        { mesh: "Top_Blouse2", outfit: "LKR 3000", fabrics: ["Cotton"] },
+        { mesh: "Top_Blouse3", outfit: "LKR 3200", fabrics: ["Cotton"] },
+        { mesh: "Top_Blouse4", outfit: "LKR 3400", fabrics: ["Rayon", "Crepe"] },
+        { mesh: "Top_Blouse5", outfit: "LKR 3600", fabrics: ["Chiffon", "Rayon"] },
+        { mesh: "Top_Blouse6", outfit: "LKR 3800", fabrics: ["Satin", "Rayon"] },
+        { mesh: "Top_Blouse7", outfit: "LKR 4000", fabrics: ["Chiffon"] },
+        { mesh: "Top_Blouse8", outfit: "LKR 4200", fabrics: ["Cotton"] },
+        { mesh: "Top_Blouse9", outfit: "LKR 4400", fabrics: ["Silk"] },
+        { mesh: "Top_Blouse10", outfit: "LKR 4600", fabrics: ["Rayon"] },
       ],
-      "Blouses/Shirts": [
-        { style: "Business Casual", outfit: "Silk blouse + trousers", sizeRef: "Bust & Shoulder Width", fabrics: ["Silk", "Satin"] },
-        { style: "Formal", outfit: "Structured shirt + pencil skirt", sizeRef: "Bust & Shoulder Width", fabrics: ["Cotton"] },
-        { style: "Preppy", outfit: "Oxford shirt + sweater vest", sizeRef: "Bust", fabrics: ["Cotton"] },
-        { style: "Minimalist", outfit: "Plain blouse + tailored pants", sizeRef: "Bust", fabrics: ["Rayon", "Crepe"] },
+      "Crop Tops": [
+        { mesh: "Top_Crop1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Top_Crop2", outfit: "LKR 3000", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Top_Crop3", outfit: "LKR 3200", fabrics: ["Satin"] },
+        { mesh: "Top_Crop5", outfit: "LKR 3400", fabrics: ["Polyester", "Satin"] },
+        { mesh: "Top_Crop6", outfit: "LKR 3600", fabrics: ["Cotton"] },
+        { mesh: "Top_Crop7", outfit: "LKR 3800", fabrics: ["Spandex"] },
+        { mesh: "Top_Crop8", outfit: "LKR 4000", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Top_Crop9", outfit: "LKR 4200", fabrics: ["Polyester"] },
+        { mesh: "Top_Crop10", outfit: "LKR 4400", fabrics: ["Lace", "Cotton"] },
       ],
-      "Crop/Tank": [
-        { style: "Summer", outfit: "Tank + shorts", sizeRef: "Bust", fabrics: ["Cotton"] },
-        { style: "Streetwear", outfit: "Crop tee + joggers", sizeRef: "Bust / Waist", fabrics: ["Cotton", "Spandex"] },
-        { style: "Party", outfit: "Sequined crop + leather pants", sizeRef: "Bust", fabrics: ["Satin"] },
-        { style: "Y2K", outfit: "Halter crop + mini skirt", sizeRef: "Bust", fabrics: ["Polyester", "Satin", "Spandex"] },
-      ],
-      "Sweaters/Hoodies": [
-        { style: "Cozy", outfit: "Chunky knit + leggings", sizeRef: "Bust / Chest", fabrics: ["Rayon", "Polyester"] },
-        { style: "Street", outfit: "Oversized hoodie + cargos", sizeRef: "Bust / Chest", fabrics: ["Cotton", "Polyester"] },
-        { style: "Smart Casual", outfit: "Turtleneck + blazer", sizeRef: "Bust / Neck", fabrics: ["Cotton", "Rayon"] },
-        { style: "Preppy", outfit: "Cable-knit sweater + skirt", sizeRef: "Bust", fabrics: ["Cotton"] },
+      "T-Shirts": [
+        { mesh: "Top_T-shirt1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt2", outfit: "LKR 3000", fabrics: ["Cotton", "Jersey Knit"] },
+        { mesh: "Top_T-shirt3", outfit: "LKR 3200", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Top_T-shirt4", outfit: "LKR 3400", fabrics: ["Polyester", "Spandex"] },
+        { mesh: "Top_T-shirt5", outfit: "LKR 3600", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt6", outfit: "LKR 3800", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt7", outfit: "LKR 4000", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt8", outfit: "LKR 4200", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt9", outfit: "LKR 4400", fabrics: ["Cotton"] },
+        { mesh: "Top_T-shirt10", outfit: "LKR 4600", fabrics: ["Cotton"] },
       ],
     },
 
     Bottoms: {
-      Jeans: [
-        { style: "Casual", outfit: "Blue denim + tee", sizeRef: "Waist & Hip", fabrics: ["Cotton"] },
-        { style: "Chic", outfit: "High-waist jeans + blouse", sizeRef: "Waist & Hip", fabrics: ["Cotton", "Spandex"] },
-        { style: "Streetwear", outfit: "Baggy jeans + crop top", sizeRef: "Waist (loose)", fabrics: ["Cotton"] },
-        { style: "Smart Casual", outfit: "Dark skinny jeans + blazer", sizeRef: "Waist & Hip", fabrics: ["Cotton", "Spandex"] },
+      "Jeans": [
+
+        { mesh: "Bottom_Jeans2", outfit: "LKR 3000", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Bottom_Jeans3", outfit: "LKR 3200", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Jeans4", outfit: "LKR 3400", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Bottom_Jeans5", outfit: "LKR 3600", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Jeans6", outfit: "LKR 3800", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Jeans7", outfit: "LKR 4000", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Jeans8", outfit: "LKR 4200", fabrics: ["Cotton"] },
       ],
-      Trousers: [
-        { style: "Business", outfit: "Tailored trousers + button-up", sizeRef: "Waist & Inseam", fabrics: ["Polyester"] },
-        { style: "Casual", outfit: "Wide-leg pants + tee", sizeRef: "Waist & Length", fabrics: ["Linen", "Cotton"] },
-        { style: "Minimalist", outfit: "Neutral slacks + crop top", sizeRef: "Waist & Hip", fabrics: ["Rayon"] },
-        { style: "Edgy", outfit: "Leather pants + jacket", sizeRef: "Waist & Hip", fabrics: ["Polyester"] },
+      "Shorts": [
+        { mesh: "Bottom_Shorts1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Shorts2", outfit: "LKR 2950", fabrics: ["Cotton"] }, // user list: Bottom_Shorts2
+        { mesh: "Bottoms_Shorts2", outfit: "LKR 3000", fabrics: ["Linen", "Cotton"] },
       ],
-      Skirts: [
-        { style: "Casual", outfit: "Denim skirt + tee", sizeRef: "Waist & Hip", fabrics: ["Cotton"] },
-        { style: "Feminine", outfit: "Floral midi + blouse", sizeRef: "Waist & Hip", fabrics: ["Chiffon", "Rayon", "Crepe"] },
-        { style: "Office", outfit: "Pencil skirt + shirt", sizeRef: "Waist & Hip", fabrics: ["Cotton", "Spandex"] },
-        { style: "Party", outfit: "Sequin mini + heels", sizeRef: "Waist & Hip", fabrics: ["Satin"] },
+      "Trousers": [
+        { mesh: "Bottom_Trouser1", outfit: "LKR 2850", fabrics: ["Polyester"] },
+        { mesh: "Bottom_Trouser2", outfit: "LKR 3000", fabrics: ["Linen", "Cotton"] },
+        { mesh: "Bottom_Trouser3", outfit: "LKR 3200", fabrics: ["Rayon"] },
       ],
-      Shorts: [
-        { style: "Summer", outfit: "Linen shorts + crop", sizeRef: "Waist & Hip", fabrics: ["Linen", "Cotton"] },
-        { style: "Casual", outfit: "Denim shorts + tank", sizeRef: "Waist & Hip", fabrics: ["Cotton"] },
-        { style: "Street", outfit: "Cargo shorts + oversized tee", sizeRef: "Waist (relaxed)", fabrics: ["Cotton"] },
-        { style: "Resort", outfit: "Paperbag shorts + sandals", sizeRef: "Waist & Hip", fabrics: ["Linen", "Rayon"] },
+      "Skirts": [
+        { mesh: "Bottoms_Skirt1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Bottoms_Skirt2", outfit: "LKR 3000", fabrics: ["Chiffon", "Rayon"] },
+        { mesh: "Bottoms_Skirt3", outfit: "LKR 3200", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Bottoms_Skirt4", outfit: "LKR 3400", fabrics: ["Satin"] },
+        { mesh: "Bottoms_Skirt5", outfit: "LKR 3600", fabrics: ["Rayon", "Chiffon"] },
+        { mesh: "Bottoms_Skirt6", outfit: "LKR 3800", fabrics: ["Cotton", "Polyester"] },
+        { mesh: "Bottoms_Skirt7", outfit: "LKR 4000", fabrics: ["Satin", "Silk"] },
+        { mesh: "Bottoms_Skirt8", outfit: "LKR 4200", fabrics: ["Crepe"] },
       ],
     },
 
     Dresses: {
-      Mini: [
-        { style: "Casual", outfit: "Cotton mini + sneakers", sizeRef: "Bust, Waist, Hip & Length", fabrics: ["Cotton", "Jersey Knit"] },
-        { style: "Party", outfit: "Bodycon + heels", sizeRef: "Bust, Waist & Hip", fabrics: ["Polyester", "Spandex"] },
-        { style: "Date Night", outfit: "Wrap mini + boots", sizeRef: "Bust & Waist", fabrics: ["Rayon", "Crepe", "Satin"] },
-        { style: "Y2K", outfit: "Slip mini + platforms", sizeRef: "Bust & Hip", fabrics: ["Satin", "Silk"] },
+      "Maxi": [
+        { mesh: "Dress_Maxi1", outfit: "LKR 2850", fabrics: ["Silk", "Satin"] },
       ],
-      Midi: [
-        { style: "Business Casual", outfit: "Structured midi + blazer", sizeRef: "Bust, Waist & Hip", fabrics: ["Crepe", "Cotton"] },
-        { style: "Boho", outfit: "Flowy midi + sandals", sizeRef: "Bust & Waist", fabrics: ["Rayon", "Chiffon"] },
-        { style: "Smart Casual", outfit: "Printed midi + flats", sizeRef: "Bust & Waist", fabrics: ["Rayon", "Crepe"] },
-        { style: "Summer", outfit: "Floral midi + hat", sizeRef: "Bust, Waist & Hip", fabrics: ["Cotton", "Linen"] },
+      "Midi": [
+        { mesh: "Dress_midi1", outfit: "LKR 2850", fabrics: ["Crepe", "Cotton"] },
+        { mesh: "Dress_midi2", outfit: "LKR 3000", fabrics: ["Rayon", "Chiffon"] },
+        { mesh: "Dress_midi3", outfit: "LKR 3200", fabrics: ["Rayon", "Crepe"] },
+        { mesh: "Dress_midi4", outfit: "LKR 3400", fabrics: ["Cotton", "Linen"] },
+        { mesh: "Dress_midi5", outfit: "LKR 3600", fabrics: ["Satin"] },
       ],
-      Maxi: [
-        { style: "Formal", outfit: "Silk maxi + heels", sizeRef: "Bust, Waist, Hip & Length", fabrics: ["Silk", "Satin"] },
-        { style: "Resort", outfit: "Flowy maxi + sandals", sizeRef: "Bust, Waist & Length", fabrics: ["Rayon", "Chiffon"] },
-        { style: "Casual", outfit: "Jersey maxi + slides", sizeRef: "Bust & Waist", fabrics: ["Jersey Knit"] },
-        { style: "Bohemian", outfit: "Printed maxi + jewelry", sizeRef: "Bust, Waist & Length", fabrics: ["Rayon", "Crepe"] },
-      ],
-    },
-
-    Outerwear: {
-      Jackets: [
-        { style: "Casual", outfit: "Denim jacket + tee", sizeRef: "Bust & Shoulder", fabrics: ["Cotton"] },
-        { style: "Streetwear", outfit: "Bomber + cargos", sizeRef: "Bust & Sleeve", fabrics: ["Polyester"] },
-        { style: "Chic", outfit: "Leather jacket + dress", sizeRef: "Bust & Shoulder", fabrics: ["Polyester"] },
-        { style: "Winter", outfit: "Puffer jacket + boots", sizeRef: "Bust & Sleeve", fabrics: ["Polyester"] },
-      ],
-      Coats: [
-        { style: "Business", outfit: "Trench coat + pumps", sizeRef: "Bust, Shoulder & Length", fabrics: ["Cotton", "Polyester"] },
-        { style: "Minimalist", outfit: "Long neutral coat + turtleneck", sizeRef: "Bust & Shoulder", fabrics: ["Rayon"] },
-        { style: "Formal", outfit: "Wool coat + gown", sizeRef: "Bust & Length", fabrics: ["Rayon"] },
-        { style: "Trendy", outfit: "Oversized coat + boots", sizeRef: "Bust (oversized)", fabrics: ["Polyester"] },
-      ],
-      Blazers: [
-        { style: "Business", outfit: "Tailored blazer + trousers", sizeRef: "Bust & Shoulder", fabrics: ["Polyester"] },
-        { style: "Smart Casual", outfit: "Oversized blazer + jeans", sizeRef: "Bust (loose)", fabrics: ["Linen", "Cotton"] },
-        { style: "Chic", outfit: "Colored blazer + heels", sizeRef: "Bust & Shoulder", fabrics: ["Crepe", "Polyester"] },
-        { style: "Minimalist", outfit: "Neutral blazer + dress", sizeRef: "Bust & Waist", fabrics: ["Linen", "Cotton"] },
+      "Mini": [
+        { mesh: "Dress_mini1", outfit: "LKR 2850", fabrics: ["Cotton", "Jersey Knit"] },
+        { mesh: "Dress_mini2", outfit: "LKR 3000", fabrics: ["Spandex"] },
+        { mesh: "Dress_mini3", outfit: "LKR 3200", fabrics: ["Cotton"] },
+        { mesh: "Dress_mini4", outfit: "LKR 3400", fabrics: ["Satin", "Silk"] },
       ],
     },
 
     Footwear: {
-      Heels: [
-        { style: "Formal", outfit: "Stilettos + gown", sizeRef: "US/EU Shoe Size", fabrics: ["Satin"] },
-        { style: "Party", outfit: "Platform heels + mini", sizeRef: "US/EU Shoe Size", fabrics: ["Satin"] },
-        { style: "Business", outfit: "Block heels + trousers", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Chic", outfit: "Kitten heels + skirt", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
+      "Sneakers": [
+        { mesh: "Footwear_Sneakers1", outfit: "LKR 2850", fabrics: ["Canvas", "Rubber"] },
+        { mesh: "Footwear_Sneakers2", outfit: "LKR 3000", fabrics: ["Synthetic", "Rubber"] },
       ],
-      Boots: [
-        { style: "Winter", outfit: "Knee-high boots + coat", sizeRef: "US/EU + Calf", fabrics: ["Polyester"] },
-        { style: "Streetwear", outfit: "Combat boots + mini dress", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Western", outfit: "Cowboy boots + denim", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Trendy", outfit: "Chunky boots + trench", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-      ],
-      "Flats/Sandals": [
-        { style: "Casual", outfit: "Ballet flats + dress", sizeRef: "US/EU Shoe Size", fabrics: ["Cotton"] },
-        { style: "Summer", outfit: "Flip-flops + shorts", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Minimalist", outfit: "Leather slides + maxi", sizeRef: "US/EU Shoe Size", fabrics: ["Cotton"] },
-        { style: "Resort", outfit: "Espadrilles + skirt", sizeRef: "US/EU Shoe Size", fabrics: ["Cotton", "Linen"] },
-      ],
-      Sneakers: [
-        { style: "Casual", outfit: "White sneakers + jeans", sizeRef: "US/EU Shoe Size", fabrics: ["Cotton", "Polyester"] },
-        { style: "Streetwear", outfit: "Chunky sneakers + cargos", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Athleisure", outfit: "Running shoes + leggings", sizeRef: "US/EU Shoe Size", fabrics: ["Polyester"] },
-        { style: "Minimalist", outfit: "Plain sneakers + mono outfit", sizeRef: "US/EU Shoe Size", fabrics: ["Cotton", "Polyester"] },
+      "Slippers": [
+        { mesh: "Footwear_Slippers1 i", outfit: "LKR 2850", fabrics: ["Cotton", "Synthetic"] },
       ],
     },
 
     "Special Categories": {
-      Loungewear: [
-        { style: "Cozy", outfit: "Sweatshirt + joggers", sizeRef: "Bust & Waist", fabrics: ["Cotton", "Polyester"] },
-        { style: "Minimalist", outfit: "Neutral knit set", sizeRef: "Bust & Waist", fabrics: ["Rayon", "Cotton"] },
-        { style: "Trendy", outfit: "Crop + sweatpants", sizeRef: "Bust & Waist", fabrics: ["Cotton", "Polyester"] },
+      "Loungewear": [
+        { mesh: "SC_Loungewear1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "SC_Loungewear2", outfit: "LKR 3050", fabrics: ["Cotton"] },
       ],
-      Activewear: [
-        { style: "Gym", outfit: "Leggings + sports bra", sizeRef: "Bust, Waist & Hip", fabrics: ["Polyester", "Spandex"] },
-        { style: "Street", outfit: "Track pants + hoodie", sizeRef: "Bust & Waist", fabrics: ["Polyester", "Cotton"] },
-        { style: "Yoga", outfit: "Stretch set + tank", sizeRef: "Bust, Waist & Hip", fabrics: ["Polyester", "Spandex"] },
+      "Activewear": [
+        { mesh: "SP_Activewear1", outfit: "LKR 2850", fabrics: ["Spandex"] },
+        { mesh: "SP_Activewear2", outfit: "LKR 3000", fabrics: ["Spandex"] },
       ],
-      Formalwear: [
-        { style: "Business Formal", outfit: "Pantsuit + heels", sizeRef: "Bust, Waist & Hip", fabrics: ["Crepe", "Polyester"] },
-        { style: "Black Tie", outfit: "Evening gown", sizeRef: "Bust, Waist, Hip & Length", fabrics: ["Silk", "Satin", "Chiffon"] },
-        { style: "Semi-Formal", outfit: "Cocktail dress + pumps", sizeRef: "Bust, Waist & Hip", fabrics: ["Satin", "Polyester"] },
+      "Hats": [
+        { mesh: "Hat_Black1", outfit: "LKR 1850", fabrics: ["Cotton"] },
+        { mesh: "Hat_Gray2.001", outfit: "LKR 1950", fabrics: ["Wool"] },
       ],
     },
+
   },
 
   Men: {
     Tops: {
-      "T-shirts": [
-        { style: "Casual", outfit: "Basic tee + jeans", sizeRef: "Chest", fabrics: ["Cotton"] },
-        { style: "Streetwear", outfit: "Oversized tee + cargos", sizeRef: "Chest (loose)", fabrics: ["Cotton", "Jersey Knit"] },
-        { style: "Oversized", outfit: "Oversized tee + baggy jeans", sizeRef: "Chest (relaxed)", fabrics: ["Cotton"] },
-        { style: "Smart Casual", outfit: "Fitted tee + blazer", sizeRef: "Chest", fabrics: ["Cotton", "Spandex"] },
-        { style: "Athleisure/Sporty", outfit: "Sport tee + joggers", sizeRef: "Chest", fabrics: ["Polyester", "Spandex"] },
+      "T-Shirts": [
+        { mesh: "Tops_T-shirt1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt2", outfit: "LKR 3000", fabrics: ["Cotton", "Jersey Knit"] },
+        { mesh: "Tops_T-shirt3", outfit: "LKR 3200", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt5", outfit: "LKR 3400", fabrics: ["Cotton", "Spandex"] },
+        { mesh: "Tops_T-shirt6", outfit: "LKR 3600", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt7", outfit: "LKR 3800", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt8", outfit: "LKR 4000", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt9", outfit: "LKR 4200", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt10", outfit: "LKR 4400", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt11", outfit: "LKR 4600", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt12", outfit: "LKR 4800", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt13", outfit: "LKR 5000", fabrics: ["Cotton"] },
+        { mesh: "Tops_T-shirt14", outfit: "LKR 5200", fabrics: ["Cotton"] },
       ],
-      Shirts: [
-        { style: "Business", outfit: "Dress shirt + trousers", sizeRef: "Chest & Neck", fabrics: ["Cotton", "Crepe"] },
-        { style: "Formal", outfit: "White shirt + suit", sizeRef: "Chest & Neck", fabrics: ["Cotton"] },
-        { style: "Preppy", outfit: "Button-down + sweater", sizeRef: "Chest & Shoulder", fabrics: ["Cotton"] },
-        { style: "Minimalist", outfit: "Linen shirt + tailored pants", sizeRef: "Chest", fabrics: ["Rayon", "Linen"] },
+      "Shirts": [
+        { mesh: "Tops_Shirts1", outfit: "LKR 2850", fabrics: ["Cotton", "Crepe"] },
       ],
-      "Polos / Henleys": [
-        { style: "Casual Polo", outfit: "Polo + shorts", sizeRef: "Chest", fabrics: ["Cotton"] },
-        { style: "Smart Polo", outfit: "Polo + chinos", sizeRef: "Chest", fabrics: ["Cotton", "Spandex"] },
-        { style: "Sporty Polo", outfit: "Henley + joggers", sizeRef: "Chest & Arm Length", fabrics: ["Polyester", "Spandex"] },
-      ],
-      "Sweaters / Hoodies": [
-        { style: "Casual Hoodie", outfit: "Hoodie + jeans", sizeRef: "Chest", fabrics: ["Cotton", "Polyester"] },
-        { style: "Street Hoodie", outfit: "Hoodie + cargos", sizeRef: "Chest (relaxed)", fabrics: ["Cotton"] },
-        { style: "Smart Casual Sweater", outfit: "Knit sweater + shirt", sizeRef: "Chest & Shoulder", fabrics: ["Rayon", "Cotton"] },
-        { style: "Minimalist Knit", outfit: "Neutral knit + trousers", sizeRef: "Chest", fabrics: ["Rayon"] },
+      "Collarless": [
+        { mesh: "Tops_Collorless1", outfit: "LKR 2850", fabrics: ["Linen", "Rayon"] },
       ],
     },
 
     Bottoms: {
-      Jeans: [
-        { style: "Casual", outfit: "Blue denim + tee", sizeRef: "Waist & Inseam", fabrics: ["Cotton"] },
-        { style: "Slim Fit", outfit: "Slim jeans + sweater", sizeRef: "Waist & Inseam", fabrics: ["Cotton", "Spandex"] },
-        { style: "Streetwear", outfit: "Distressed jeans + hoodie", sizeRef: "Waist & Inseam", fabrics: ["Cotton"] },
-        { style: "Smart Denim", outfit: "Dark denim + blazer", sizeRef: "Waist & Inseam", fabrics: ["Cotton", "Spandex"] },
+      "Jeans": [
+        { mesh: "Bottoms_Jeans1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Bottoms_Jeans2", outfit: "LKR 3000", fabrics: ["Cotton", "Spandex"] },
       ],
-      "Pants / Trousers": [
-        { style: "Business", outfit: "Suit trousers + shirt", sizeRef: "Waist & Inseam", fabrics: ["Polyester", "Crepe"] },
-        { style: "Smart Casual", outfit: "Chinos + polo", sizeRef: "Waist & Inseam", fabrics: ["Linen", "Rayon"] },
-        { style: "Minimalist", outfit: "Tailored pants + tee", sizeRef: "Waist & Hip", fabrics: ["Rayon"] },
-        { style: "Streetwear", outfit: "Cargo pants + hoodie", sizeRef: "Waist", fabrics: ["Cotton", "Polyester"] },
+      "Shorts": [
+        { mesh: "Bottom_Shorts1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "Bottom_Shorts1.001", outfit: "LKR 2850", fabrics: ["Cotton"] },
       ],
-      Shorts: [
-        { style: "Casual", outfit: "Cotton shorts + tee", sizeRef: "Waist", fabrics: ["Cotton"] },
-        { style: "Sport", outfit: "Athletic shorts + tank", sizeRef: "Waist", fabrics: ["Polyester", "Spandex"] },
-        { style: "Summer", outfit: "Linen shorts + shirt", sizeRef: "Waist", fabrics: ["Linen", "Cotton"] },
-        { style: "Streetwear", outfit: "Cargo shorts + sneakers", sizeRef: "Waist", fabrics: ["Cotton"] },
-      ],
-    },
-
-    Outerwear: {
-      Jackets: [
-        { style: "Casual", outfit: "Cotton jacket + tee", sizeRef: "Chest & Shoulder", fabrics: ["Cotton"] },
-        { style: "Streetwear", outfit: "Bomber + cargos", sizeRef: "Chest & Sleeves", fabrics: ["Polyester"] },
-        { style: "Smart Casual", outfit: "Minimal blazer jacket + chinos", sizeRef: "Chest & Shoulder", fabrics: ["Cotton", "Rayon"] },
-        { style: "Sport Jacket", outfit: "Track jacket + joggers", sizeRef: "Chest", fabrics: ["Polyester", "Spandex"] },
-      ],
-      Coats: [
-        { style: "Business", outfit: "Trench coat + suit", sizeRef: "Chest & Shoulder", fabrics: ["Polyester", "Rayon"] },
-        { style: "Minimalist", outfit: "Simple overcoat + turtleneck", sizeRef: "Chest & Length", fabrics: ["Rayon"] },
-        { style: "Smart Casual", outfit: "Lightweight coat + chinos", sizeRef: "Chest", fabrics: ["Cotton", "Linen"] },
-        { style: "Trendy", outfit: "Patterned coat + trousers", sizeRef: "Chest", fabrics: ["Polyester"] },
-      ],
-      Blazers: [
-        { style: "Business", outfit: "Suit blazer + trousers", sizeRef: "Chest, Shoulder, Waist", fabrics: ["Polyester"] },
-        { style: "Smart Casual", outfit: "Unstructured blazer + jeans", sizeRef: "Chest & Shoulder", fabrics: ["Linen", "Cotton"] },
-        { style: "Minimalist", outfit: "Monotone blazer + trousers", sizeRef: "Chest & Shoulder", fabrics: ["Crepe", "Polyester"] },
-        { style: "Trendy", outfit: "Patterned blazer + loafers", sizeRef: "Chest & Shoulder", fabrics: ["Polyester"] },
+      "Pants": [
+        { mesh: "Bottoms_Pants1", outfit: "LKR 2850", fabrics: ["Polyester", "Crepe"] },
+        { mesh: "Bottoms_Pants2", outfit: "LKR 3000", fabrics: ["Linen", "Rayon"] },
+        { mesh: "Bottoms_Pants3", outfit: "LKR 3200", fabrics: ["Cotton", "Polyester"] },
+        { mesh: "Bottoms_Pants4", outfit: "LKR 3400", fabrics: ["Cotton", "Polyester"] },
+        { mesh: "Bottoms_Pants5", outfit: "LKR 3600", fabrics: ["Polyester"] },
+        { mesh: "Bottoms_Pants6", outfit: "LKR 3800", fabrics: ["Linen"] },
       ],
     },
 
     Footwear: {
-      "Dress Shoes": [{ outfit: "Dress shoes + formalwear", sizeRef: "Shoe Size", fabrics: ["Satin", "Polyester"] }],
-      "Business Shoes": [{ outfit: "Business shoes + office outfit", sizeRef: "Shoe Size", fabrics: ["Polyester"] }],
-      "Casual Sneakers": [{ outfit: "Casual sneakers + jeans", sizeRef: "Shoe Size", fabrics: ["Cotton"] }],
-      "Athleisure Sneakers": [{ outfit: "Athleisure sneakers + joggers", sizeRef: "Shoe Size", fabrics: ["Polyester", "Spandex"] }],
-      "Street Sneakers": [{ outfit: "Street sneakers + cargos", sizeRef: "Shoe Size", fabrics: ["Cotton", "Polyester"] }],
-      Boots: [{ outfit: "Boots + jacket", sizeRef: "Shoe Size", fabrics: ["Polyester"] }],
-      "Chelsea Boots": [{ outfit: "Chelsea boots + trousers", sizeRef: "Shoe Size", fabrics: ["Polyester"] }],
-      "Trendy Boots": [{ outfit: "Trendy boots + coat", sizeRef: "Shoe Size", fabrics: ["Polyester"] }],
-      Sandals: [{ outfit: "Sandals + shorts", sizeRef: "Shoe Size", fabrics: ["Cotton"] }],
-      Slides: [{ outfit: "Slides + loungewear", sizeRef: "Shoe Size", fabrics: ["Cotton", "Polyester"] }],
-      Espadrilles: [{ outfit: "Espadrilles + resort outfit", sizeRef: "Shoe Size", fabrics: ["Cotton", "Linen"] }],
+      "Shoes": [
+        { mesh: "Footwear_Shoes1", outfit: "LKR 2850", fabrics: ["Leather"] },
+      ],
+      "Slippers": [
+        { mesh: "Footwear_Slippers1 i", outfit: "LKR 2850", fabrics: ["Cotton", "Synthetic"] },
+      ],
     },
 
     "Special Categories": {
-      Loungewear: [
-        { style: "Casual", outfit: "Casual loungewear set", sizeRef: "Chest & Waist", fabrics: ["Cotton", "Polyester"] },
-        { style: "Minimalist", outfit: "Minimalist loungewear set", sizeRef: "Chest & Waist", fabrics: ["Rayon", "Cotton"] },
-        { style: "Cozy", outfit: "Cozy set", sizeRef: "Chest & Waist", fabrics: ["Jersey Knit"] },
+      "Loungewear": [
+        { mesh: "SC_Loungewear1", outfit: "LKR 2850", fabrics: ["Cotton"] },
+        { mesh: "SC_Loungewear2", outfit: "LKR 3050", fabrics: ["Cotton"] },
       ],
-      Activewear: [
-        { style: "Gym", outfit: "Gym set", sizeRef: "Chest & Waist", fabrics: ["Polyester", "Spandex"] },
-        { style: "Running", outfit: "Running set", sizeRef: "Chest & Waist", fabrics: ["Polyester", "Spandex"] },
-        { style: "Training", outfit: "Training set", sizeRef: "Chest & Waist", fabrics: ["Polyester", "Spandex"] },
+      "Activewear": [
+        { mesh: "SP_Activewear1", outfit: "LKR 2850", fabrics: ["Spandex"] },
+        { mesh: "SP_Activewear2", outfit: "LKR 3000", fabrics: ["Spandex"] },
       ],
-      Formalwear: [
-        { style: "Business Formal", outfit: "Business formal suit", sizeRef: "Chest & Waist", fabrics: ["Crepe", "Polyester"] },
-        { style: "Evening", outfit: "Evening formal", sizeRef: "Chest & Waist", fabrics: ["Satin", "Silk"] },
-        { style: "Semi-Formal", outfit: "Semi-formal", sizeRef: "Chest & Waist", fabrics: ["Polyester", "Satin"] },
+      "Hats": [
+        { mesh: "Hat_Gray2", outfit: "LKR 1750", fabrics: ["Wool"] },
+        { mesh: "Hat_Gray2.001", outfit: "LKR 1850", fabrics: ["Wool"] },
+      ],
+      "Accessories": [
+        { mesh: "Object_6", outfit: "Prop", fabrics: ["Other"] },
       ],
     },
+
+
   },
 };
 
 /* =====================================================================================
-   ✅ Helpers
+   Helpers
    ===================================================================================== */
-
-export function makeStyleKey(category, subcategory, style) {
-  return `${category}__${subcategory}__${style}`;
+export function makeSubKey(gender, category, subcategory) {
+  return `${gender}__${category}__${subcategory}`;
 }
-
-/* =====================================================================================
-   ✅ Build UI datasets from OUTFITS
-   - FIXED: Men Footwear one tile per footwear name
-   - Adds special cloth item name "preppy1.glb" for your Preppy style
-   - Adds special cloth item name "sequined_crop_party.glb" for Women Crop/Tank Party
-   ===================================================================================== */
 
 function buildCatalogData() {
   const genders = Object.keys(OUTFITS);
-
   const categories = {};
   const subcategories = {};
-  const subSubcategories = {};
   const clothingItems = {};
-  const sizeChart = { Women: {}, Men: {} };
+  const sizeChart = {};
 
   genders.forEach((gender) => {
     const genderCats = Object.keys(OUTFITS[gender]);
     categories[gender] = genderCats;
-
     subcategories[gender] = {};
-    subSubcategories[gender] = {};
 
     genderCats.forEach((cat) => {
       const subs = Object.keys(OUTFITS[gender][cat]);
       subcategories[gender][cat] = subs;
 
-      subSubcategories[gender][cat] = {};
-
       subs.forEach((sub) => {
-        const styles = OUTFITS[gender][cat][sub];
+        const subKey = makeSubKey(gender, cat, sub);
+        const items = OUTFITS[gender][cat][sub];
 
-        // ✅ Men Footwear special: one tile per footwear name
-        if (gender === "Men" && cat === "Footwear") {
-          subSubcategories[gender][cat][sub] = [
-            {
-              key: makeStyleKey(cat, sub, sub),
-              name: sub,
-              image: STYLE_IMG,
-            },
-          ];
-        } else {
-          subSubcategories[gender][cat][sub] = styles.map((s) => ({
-            key: makeStyleKey(cat, sub, s.style),
-            name: s.style,
-            image: STYLE_IMG,
+        if (!clothingItems[subKey]) {
+          clothingItems[subKey] = items.map((item, idx) => ({
+            id: `${subKey}-${idx}`,
+            name: item.mesh,
+            meshName: item.mesh,
+            category: cat,
+            subcategory: sub,
+            outfit: item.outfit,
+            image: null,
+            fabrics: item.fabrics,
           }));
+          sizeChart[subKey] = ["XS", "S", "M", "L", "XL", "XXL"];
         }
-
-        styles.forEach((s) => {
-          const isMenFootwear = gender === "Men" && cat === "Footwear";
-          const styleKey = isMenFootwear ? makeStyleKey(cat, sub, sub) : makeStyleKey(cat, sub, s.style);
-
-          if (!clothingItems[styleKey]) {
-            // ✅ Special: Men -> Tops -> Shirts -> Preppy
-            if (gender === "Men" && cat === "Tops" && sub === "Shirts" && s.style === "Preppy") {
-              clothingItems[styleKey] = [
-                { id: `${styleKey}-1`, name: "preppy1.glb", image: hh }, // ✅ real GLB
-                { id: `${styleKey}-2`, name: `${s.outfit} (Option 2)`, image: hh },
-                { id: `${styleKey}-3`, name: `${s.outfit} (Option 3)`, image: hh },
-                { id: `${styleKey}-4`, name: `${s.outfit} (Option 4)`, image: hh },
-                { id: `${styleKey}-5`, name: `${s.outfit} (Option 5)`, image: hh },
-              ];
-
-              // ✅ Special: Women -> Tops -> Crop/Tank -> Party
-            } else if (gender === "Women" && cat === "Tops" && sub === "Crop/Tank" && s.style === "Party") {
-              clothingItems[styleKey] = [
-                { id: `${styleKey}-1`, name: "sequined_crop_party.glb", image: hh }, // ✅ real GLB
-                { id: `${styleKey}-2`, name: `${s.outfit} (Option 2)`, image: hh },
-                { id: `${styleKey}-3`, name: `${s.outfit} (Option 3)`, image: hh },
-                { id: `${styleKey}-4`, name: `${s.outfit} (Option 4)`, image: hh },
-                { id: `${styleKey}-5`, name: `${s.outfit} (Option 5)`, image: hh },
-              ];
-            } else {
-              clothingItems[styleKey] = [
-                { id: `${styleKey}-1`, name: s.outfit, image: hh },
-                { id: `${styleKey}-2`, name: `${s.outfit} (Option 2)`, image: hh },
-                { id: `${styleKey}-3`, name: `${s.outfit} (Option 3)`, image: hh },
-                { id: `${styleKey}-4`, name: `${s.outfit} (Option 4)`, image: hh },
-                { id: `${styleKey}-5`, name: `${s.outfit} (Option 5)`, image: hh },
-              ];
-            }
-          }
-
-          const sizes =
-            (gender === "Women" && WOMEN_SIZE_GUIDES[styleKey]) ||
-            SIZE_TABLES[s.sizeRef] ||
-            ["XS", "S", "M", "L", "XL", "XXL"];
-
-          sizeChart[gender][styleKey] =
-            gender === "Women" && WOMEN_SIZE_GUIDES[styleKey]
-              ? sizes
-              : sizes.map((x) => `${x} — ${s.sizeRef}`);
-        });
       });
     });
   });
 
-  return { categories, subcategories, subSubcategories, clothingItems, sizeChart };
+  return { categories, subcategories, clothingItems, sizeChart };
 }
 
 export const CATALOG = buildCatalogData();

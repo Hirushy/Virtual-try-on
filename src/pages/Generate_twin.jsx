@@ -1,25 +1,50 @@
-// src/pages/GenerateTwin.jsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { CheckCircleIcon, Loader2Icon, ScanIcon } from "lucide-react";
+import heroBg from "../assets/pink.jpg";
 
-// ✅ IMPORTANT: your backend runs on 8001
-const API_BASE = "http://127.0.0.1:8001";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001";
+
+// Polling settings
+const POLL_INTERVAL_MS = 150;
+const MAX_POLL_ATTEMPTS = 200;
 
 export default function GenerateTwin() {
   const [progress, setProgress] = useState(0);
+  const [targetProgress, setTargetProgress] = useState(35);
   const [avatarData, setAvatarData] = useState(null);
-  const [apiStatus, setApiStatus] = useState("idle"); // idle | loading | success | error
+  const [apiStatus, setApiStatus] = useState("loading"); // loading | success | error
+  const [apiMessage, setApiMessage] = useState("Initializing AI pipeline...");
   const [errorMsg, setErrorMsg] = useState("");
+  const [pollCount, setPollCount] = useState(0);
 
   const navigate = useNavigate();
   const location = useLocation();
+  const didNavigateRef = useRef(false);
+  const pageMountedAtRef = useRef(Date.now());
+  const [pageReady, setPageReady] = useState(false);
 
-  const uploadedPhotos = useMemo(() => {
-    const p = location.state?.photos || { front: null, back: null };
-    return p;
+  const pendingState = useMemo(() => {
+    if (location.state) return null;
+    try {
+      return JSON.parse(localStorage.getItem("shadow_fit_generate_twin_pending")) || null;
+    } catch {
+      return null;
+    }
   }, [location.state]);
+
+  const uploadedPhotos = useMemo(
+    () => location.state?.photos || pendingState?.photos || { front: null, sideOrBack: null },
+    [location.state, pendingState]
+  );
+
+  // Size + measurements from filename detection (passed by UploadPhoto)
+  const passedSize = location.state?.size || pendingState?.size || null;
+  const passedMeasurements = location.state?.measurements || pendingState?.measurements || null;
+  const passedAvatarData = location.state?.avatarData || pendingState?.avatarData || null;
 
   const getPreview = (photo) => {
     if (!photo) return null;
@@ -28,273 +53,332 @@ export default function GenerateTwin() {
     return null;
   };
 
-  const fadeUp = {
-    initial: { opacity: 0, y: 30 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
-    },
-  };
-
-  const steps = [
-    "Analyzing body measurements...",
-    "Reconstructing your digital structure...",
-    "Mapping realistic skin and textures...",
-    "Estimating posture and proportions...",
-    "Generating facial details...",
-    "Applying 3D mesh refinements...",
-    "Rendering your virtual twin...",
-    "Finalizing high-quality output...",
-    "Your avatar is ready to view!",
-  ];
-
-  // Progress animation
+  // ── Smooth progress animation (drifts towards targetProgress) ────
   useEffect(() => {
     const interval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 1, 100));
-    }, 60);
+      setProgress((prev) => {
+        // Dynamic smoothing: move faster if we are far behind target
+        const diff = targetProgress - prev;
+        const step = diff > 20 ? 2.5 : 0.8;
+        const next = prev + step;
+        if (next < targetProgress) return Math.min(next, 100);
+        // Passive drift when waiting
+        return Math.min(prev + 0.02, 99.9);
+      });
+    }, 50);
     return () => clearInterval(interval);
+  }, [targetProgress]);
+
+  // ── Polling logic ─────────────────────────────────────────
+  const pollRef = useRef(null);
+
+  function isLockedContract(data) {
+    return (
+      data &&
+      typeof data === "object" &&
+      typeof data.gender === "string" &&
+      data.proportions &&
+      data.proportions.front &&
+      typeof data.proportions.has_side_image === "boolean" &&
+      data.shape_key_weights &&
+      typeof data.shape_key_weights.Chest === "number" &&
+      typeof data.shape_key_weights.Waist === "number" &&
+      typeof data.shape_key_weights.Hips === "number"
+    );
+  }
+
+  useEffect(() => {
+    pageMountedAtRef.current = Date.now();
+    setPageReady(true);
   }, []);
 
-  const calledRef = useRef(false);
-
-  // ✅ Fetch locked JSON contract from backend
   useEffect(() => {
-    if (calledRef.current) return;
-    calledRef.current = true;
+    let attempts = 0;
+    let cancelled = false;
 
-    const fetchAvatarData = async () => {
-      setApiStatus("loading");
-      setErrorMsg("");
+    const navigateToGenerated = (data) => {
+      if (didNavigateRef.current) return;
+      localStorage.removeItem("shadow_fit_generate_twin_pending");
+      const mergedAvatarData = passedSize
+        ? { ...data, size: passedSize, gender: passedAvatarData?.gender || data.gender }
+        : data;
 
-      try {
-        // ✅ FIX: use port 8001 (backend runs here)
-        const res = await fetch(`${API_BASE}/avatar-data`, {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        // ✅ Locked contract validation
-        const hasLockedKeys =
-          data &&
-          typeof data === "object" &&
-          typeof data.gender === "string" &&
-          data.proportions &&
-          data.proportions.front &&
-          typeof data.proportions.has_side_image === "boolean" &&
-          data.shape_key_weights &&
-          typeof data.shape_key_weights.Chest === "number" &&
-          typeof data.shape_key_weights.Waist === "number" &&
-          typeof data.shape_key_weights.Hips === "number";
-
-        if (!hasLockedKeys) {
-          setApiStatus("error");
-          setErrorMsg("Avatar data format is incorrect (not locked contract).");
-          return;
-        }
-
-        setAvatarData(data);
-        setApiStatus("success");
-      } catch (err) {
-        setApiStatus("error");
-        setErrorMsg(
-          "Server error. Please start backend and try again.\n\n" +
-            (err?.message || "")
-        );
-      }
-    };
-
-    fetchAvatarData();
-  }, []);
-
-  // Navigate when done
-  useEffect(() => {
-    if (progress >= 100 && apiStatus === "success") {
-      const timeout = setTimeout(() => {
+      const redirect = () => {
+        if (didNavigateRef.current) return;
+        didNavigateRef.current = true;
         navigate("/generated", {
           state: {
             photos: uploadedPhotos,
-            avatarData, // ✅ pass locked contract
+            avatarData: mergedAvatarData,
+            measurements: passedMeasurements,
+            size: passedSize || data?.size,
           },
         });
-      }, 600);
+      };
 
-      return () => clearTimeout(timeout);
-    }
-  }, [progress, apiStatus, navigate, uploadedPhotos, avatarData]);
+      setApiMessage("Avatar ready! Redirecting now...");
+      setApiStatus("success");
+      setTargetProgress(100);
+      setProgress(100);
 
-  const currentStepIndex = Math.floor((progress / 100) * steps.length);
+      const minVisibleMs = 1800;
+      const elapsed = Date.now() - pageMountedAtRef.current;
+      const delayMs = pageReady ? Math.max(minVisibleMs - elapsed, 0) : minVisibleMs;
 
-  // ✅ Use these for display (since locked contract has no "shape")
+      setTimeout(redirect, delayMs);
+    };
+
+    const poll = async () => {
+      if (cancelled) return;
+      attempts++;
+      setPollCount(attempts);
+
+      try {
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}`, "Cache-Control": "no-cache" } : { "Cache-Control": "no-cache" };
+
+        // 1. Check if avatar data is ready first
+        const res = await fetch(`${API_BASE}/api/avatar-data`, {
+          cache: "no-store",
+          headers,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (isLockedContract(data)) {
+            if (!cancelled) {
+              setAvatarData(data);
+              setApiStatus("success");
+              setTargetProgress(100);
+              setProgress(100);
+              navigateToGenerated(data);
+              return; // Stop polling and redirect immediately
+            }
+          }
+        }
+
+        // Fetch the current processing stage of the pipeline
+        const statusRes = await fetch(`${API_BASE}/api/pipeline-status`, {
+          cache: "no-store",
+          headers,
+        });
+
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.stage > 0) {
+            setApiMessage(statusData.message || "Processing...");
+            const stageProgress = Math.min(95, statusData.stage * 33);
+            setTargetProgress(stageProgress);
+          }
+          if (statusData.stage === -1) {
+            throw new Error(statusData.message || "Pipeline error");
+          }
+        }
+
+        if (attempts < MAX_POLL_ATTEMPTS) {
+          pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+        } else {
+          throw new Error("Pipeline timed out.");
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setApiStatus("error");
+        setErrorMsg(err?.message || "Generation failed.");
+      }
+    };
+
+    pollRef.current = setTimeout(poll, 0); // Start immediately
+
+    return () => {
+      cancelled = true;
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, [navigate, uploadedPhotos, passedMeasurements, passedAvatarData, passedSize]);
+
+
   const chestW = avatarData?.shape_key_weights?.Chest ?? 0;
   const waistW = avatarData?.shape_key_weights?.Waist ?? 0;
   const hipsW = avatarData?.shape_key_weights?.Hips ?? 0;
 
   const bodyHint = (() => {
-    // Simple hint text based on weights (optional, UI only)
     const avg = (chestW + waistW + hipsW) / 3;
     if (avg < 0.33) return "Slim";
     if (avg < 0.66) return "Average";
     return "Broad";
   })();
 
+  const fadeUp = {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
+  };
+
   return (
-    <div className="relative min-h-screen bg-white text-[#1f1f1f] overflow-hidden font-['Didact_Gothic',sans-serif]">
-      <div className="absolute left-0 top-0 z-20 w-full">
-        <Navbar />
-      </div>
+    <div className="relative min-h-screen bg-white text-[#1f1f1f] overflow-hidden"
+      style={{ fontFamily: "'Didact Gothic', sans-serif" }}>
 
-      <section className="flex flex-col-reverse items-center justify-center gap-16 px-8 pb-24 pt-32 lg:flex-row lg:px-24">
-        <Motion.div
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          className="flex max-w-lg flex-1 flex-col items-center space-y-6 text-center lg:items-start lg:text-left"
-        >
-          <div className="flex justify-center gap-4 lg:justify-start">
+      {/* Background */}
+      <Motion.div
+        initial={{ scale: 1 }} animate={{ scale: 1.08 }}
+        transition={{ duration: 15, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center", willChange: "transform", opacity: 0.4 }}
+      />
+
+      <div className="absolute left-0 top-0 z-20 w-full"><Navbar /></div>
+
+      <section className="relative z-20 flex flex-col-reverse items-center justify-center gap-24 px-8 pb-20 pt-20 lg:flex-row lg:px-32">
+
+        {/* LEFT: Loading card */}
+        <Motion.div variants={fadeUp} initial="initial" animate="animate"
+          className="flex flex-1 min-w-0 flex-col items-center space-y-8 text-center lg:items-start lg:text-left">
+
+          {/* Photo previews */}
+          <div className="flex justify-center gap-6 lg:justify-start">
             {getPreview(uploadedPhotos.front) && (
-              <img
-                src={getPreview(uploadedPhotos.front)}
-                alt="Front"
-                className="object-cover w-24 h-32 border border-[#8a7c65]/50 rounded-lg shadow-md"
-              />
+              <img src={getPreview(uploadedPhotos.front)} alt="Front"
+                className="object-cover w-32 h-40 border border-black/10 rounded-3xl shadow-lg" />
             )}
-            {getPreview(uploadedPhotos.back) && (
-              <img
-                src={getPreview(uploadedPhotos.back)}
-                alt="Back"
-                className="object-cover w-24 h-32 border border-[#8a7c65]/50 rounded-lg shadow-md"
-              />
+            {getPreview(uploadedPhotos.sideOrBack) && (
+              <img src={getPreview(uploadedPhotos.sideOrBack)} alt="Side"
+                className="object-cover w-32 h-40 border border-black/10 rounded-3xl shadow-lg" />
             )}
           </div>
 
-          <h1 className="text-5xl font-light leading-tight tracking-tight text-[#1f1f1f]">
-            Building Your
-            <br />
-            <span className="font-medium text-[#8a7c65]">Virtual Avatar</span>
-          </h1>
 
-          <p className="max-w-md text-base leading-relaxed text-gray-600">
-            Please wait while your body details are processed to generate your 3D
-            avatar. This won’t take long.
-          </p>
+          {/* Loader card */}
+          <div className="bg-white/20 backdrop-blur-2xl border border-white/30 rounded-[2.5rem] p-14 w-full min-h-[640px] shadow-2xl ring-1 ring-white/40 relative overflow-hidden hover:bg-white/25 transition-all duration-300">
+            <div className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#A07850] rounded-full filter blur-[80px] animate-pulse" />
+            </div>
 
-          <div className="text-sm">
-            {apiStatus === "loading" && (
-              <span className="text-gray-500">Connecting to AI pipeline...</span>
-            )}
-            {apiStatus === "success" && (
-              <span className="text-green-600">Avatar data ready ✅</span>
-            )}
-            {apiStatus === "error" && (
-              <span className="whitespace-pre-line text-red-500">{errorMsg}</span>
-            )}
-          </div>
+            <div className="relative z-10 flex flex-col items-center">
+              <Loader2Icon className="w-12 h-12 text-[#1f1f1f] animate-spin mb-8 opacity-70" />
 
-          <div className="relative my-8 h-40 w-40">
-            <svg className="h-40 w-40" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="#e5e5e5"
-                strokeWidth="10"
-                fill="none"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="#8a7c65"
-                strokeWidth="10"
-                fill="none"
-                strokeDasharray={2 * Math.PI * 45}
-                strokeDashoffset={(1 - progress / 100) * 2 * Math.PI * 45}
-                strokeLinecap="round"
-                transform="rotate(-90 50 50)"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-2xl font-medium text-[#8a7c65]">
-              {progress}%
+              {/* Animated step label */}
+              <div className="h-12 mb-10 relative w-full flex justify-center">
+                <AnimatePresence mode="wait">
+                  <Motion.h3
+                    key={apiMessage}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="text-2xl font-black text-[#1f1f1f] absolute text-center w-full tracking-tight"
+                  >
+                    {apiMessage}
+                  </Motion.h3>
+                </AnimatePresence>
+              </div>
+
+              {/* Wireframe visualiser */}
+              <div className="w-full bg-white/30 backdrop-blur-sm rounded-2xl border border-white/20 p-8 flex flex-col items-center justify-center overflow-hidden" style={{ minHeight: 220 }}>
+                <div className="relative w-20 h-20" style={{ perspective: 1000 }}>
+                  <Motion.div className="w-full h-full border-[3px] border-[#1f1f1f] rounded-full absolute opacity-30"
+                    animate={{ rotateX: 360, rotateY: 180 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} />
+                  <Motion.div className="w-full h-full border-[3px] border-[#1f1f1f] rounded-full absolute opacity-20"
+                    animate={{ rotateY: 360, rotateZ: 180 }} transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }} />
+                  <Motion.div className="w-full h-full border-[3px] border-[#1f1f1f] rounded-full absolute opacity-10"
+                    animate={{ rotateZ: 360, rotateX: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {progress >= 100
+                      ? <CheckCircleIcon className="w-7 h-7 text-[#1f1f1f]" />
+                      : <ScanIcon className="w-5 h-5 text-[#1f1f1f] animate-pulse opacity-60" />}
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-[3px] w-full bg-black/8 rounded-full overflow-hidden mt-8 max-w-[200px]">
+                  <Motion.div className="h-full bg-slate-900 rounded-full"
+                    initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.4 }} />
+                </div>
+                <span className="mt-3 text-sm font-black font-mono text-[#1f1f1f] tracking-widest">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+
+              {/* Status */}
+              <div className="mt-8 text-sm text-center font-black uppercase tracking-[0.26em]">
+                {apiStatus === "loading" && (
+                  <span className="text-[#333333]">
+                    AI pipeline running… ({pollCount} checks)
+                  </span>
+                )}
+                {apiStatus === "success" && (
+                  <span className="text-[#1f1f1f] text-xl font-bold">Avatar data ready ✓</span>
+                )}
+                {apiStatus === "error" && (
+                  <span className="whitespace-pre-line text-red-500 text-base">{errorMsg}</span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="w-full max-w-sm">
-            {steps.map((step, idx) => (
-              <p
-                key={idx}
-                className={`text-sm mb-1 transition-all duration-300 ${
-                  idx <= currentStepIndex
-                    ? "text-[#8a7c65] font-medium"
-                    : "text-gray-400"
-                }`}
-              >
-                {step}
-              </p>
-            ))}
-          </div>
-
+          {/* Retry */}
           {apiStatus === "error" && (
-            <Motion.button
-              onClick={() => window.location.reload()}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-6 py-2 rounded-full bg-[#1f1f1f] text-white text-sm font-medium"
-            >
-              Retry
+            <Motion.button onClick={() => navigate("/upload-photo")}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              className="px-6 py-3 bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest rounded-full">
+              ← Upload Again
             </Motion.button>
           )}
 
-          <Motion.button
-            onClick={() =>
-              navigate("/upload-photo", { state: { photos: uploadedPhotos } })
-            }
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="text-[#8a7c65] underline underline-offset-4 hover:text-[#6e604e] transition-all duration-300 font-medium"
-          >
-            ← Back To Upload Photo
-          </Motion.button>
+          {/* Back */}
+          <button
+            onClick={() => navigate("/upload-photo", { state: { photos: uploadedPhotos } })}
+            className="text-sm font-black uppercase tracking-widest text-[#1f1f1f] hover:text-[#8a7c65] transition-colors duration-200 flex items-center gap-2 mt-4">
+            ← Back to Upload Photo
+          </button>
         </Motion.div>
 
-        <Motion.div
-          className="flex flex-1 items-center justify-center"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <Motion.div
-            className="w-72 h-72 bg-[#f8f8f8] border border-[#8a7c65]/50 shadow-lg rounded-2xl flex flex-col items-center justify-center text-[#8a7c65] font-medium text-lg tracking-wide gap-3"
-            animate={{ rotateY: [0, 360] }}
-            transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-          >
-            <div>3D Avatar Preview</div>
+        {/* RIGHT: Avatar preview card */}
+        <Motion.div className="flex flex-1 min-w-0 items-center justify-center"
+          initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+          <div className="bg-white/20 backdrop-blur-2xl border border-white/30 rounded-[3rem] shadow-2xl ring-1 ring-white/40 w-full h-[34rem] flex flex-col items-center justify-center gap-8 p-14 text-center hover:bg-white/25 transition-all duration-300">
+            <Motion.div animate={{ rotateY: [0, 360] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+              className="text-base font-black uppercase tracking-[0.3em] text-[#1f1f1f]">
+              3D Avatar Preview
+            </Motion.div>
 
-            {/* ✅ Locked contract display */}
-            {apiStatus === "success" && (
-              <div className="space-y-1 px-6 text-center text-xs font-normal text-gray-500">
-                <div>Gender: {avatarData?.gender}</div>
-                <div>Body hint: {bodyHint}</div>
-                <div>
-                  Weights — Chest: {chestW.toFixed(2)} • Waist:{" "}
-                  {waistW.toFixed(2)} • Hips: {hipsW.toFixed(2)}
+            {apiStatus === "success" && avatarData ? (
+              <div className="space-y-4 text-center w-full">
+                <p className="text-sm font-black uppercase tracking-widest text-[#333333]">
+                  Gender: <span className="text-xl font-bold text-[#1f1f1f]">{passedAvatarData?.gender || avatarData?.gender}</span>
+                </p>
+                <p className="text-sm font-black uppercase tracking-widest text-[#333333]">
+                  Size: <span className="text-xl font-bold text-[#1f1f1f]">{passedSize || avatarData?.size || "AI"}</span>
+                </p>
+                <p className="text-sm font-black uppercase tracking-widest text-[#333333]">
+                  Body: <span className="text-xl font-bold text-[#1f1f1f]">{bodyHint}</span>
+                </p>
+                <div className="mt-8 space-y-4">
+                  {[["Chest", chestW], ["Waist", waistW], ["Hips", hipsW]].map(([label, val]) => (
+                    <div key={label} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
+                      <div className="flex justify-between mb-3">
+                        <span className="text-sm font-black uppercase tracking-widest text-[#1f1f1f]">{label}</span>
+                        <span className="text-sm font-black font-mono text-[#1f1f1f] italic">{val.toFixed(2)}</span>
+                      </div>
+                      <div className="h-4 w-full bg-black/10 rounded-full overflow-hidden">
+                        <Motion.div className="h-full bg-[#1f1f1f] rounded-full"
+                          initial={{ width: 0 }} animate={{ width: `${val * 100}%` }}
+                          transition={{ duration: 0.9, ease: "easeOut" }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-black/10 border-t-[#1f1f1f] rounded-full animate-spin" />
+                <p className="text-sm font-black uppercase tracking-widest text-[#1f1f1f]">
+                  Processing…
+                </p>
+              </div>
             )}
-          </Motion.div>
+          </div>
         </Motion.div>
       </section>
 
-      <footer className="w-full h-16 bg-[#f2f2f2] border-t border-gray-200 flex items-center justify-center text-sm text-gray-600 tracking-wide">
-        © {new Date().getFullYear()} Virtual Try-On — Designed with simplicity
-        & style.
-      </footer>
+      <Footer isLightPage={true} />
     </div>
   );
 }

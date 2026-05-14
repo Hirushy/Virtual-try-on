@@ -1,15 +1,10 @@
-// src/pages/measurements/glbMap.js
-"use client";
-
-/*
-  key = `${styleKey}__${clothName}`
-  value = OBJECT NAME inside avatar1.glb
-*/
-
+// src/pages/measurements/GlbMap.jsx
+/**
+ * 🧥 CLOTH_OBJ_MAP
+ * This map provides a legacy bridge for resolving mesh names from catalog descriptions.
+ * The system now prefers direct 'meshName' mapping in CatalogData.jsx.
+ */
 export const CLOTH_OBJ_MAP = {
-  // Women -> Tops -> Crop/Tank -> Party
-  "Tops__Crop/Tank__Party__sequined_crop_party.glb": "top_sequined_crop_party",
-
-  // (Example if you add more later)
-  // "Tops__Shirts__Preppy__preppy1.glb": "top_preppy1",
+  // Legacy entries can go here if needed for backward compatibility
+  // "Category__Subcategory__OutfitDescription": "Technical_Mesh_Name"
 };
