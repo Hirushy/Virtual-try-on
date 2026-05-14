@@ -10,6 +10,28 @@ Fitora is a state-of-the-art AI Virtual Try-On application designed to revolutio
 - **AI Fit Analysis** — Real-time fit heatmaps and brand-specific size recommendations.
 - **Secure Authentication** — Firebase authentication with additional PIN-based security.
 
+## 📸 Project Preview
+
+### 1. Cinematic Landing Page
+The entry point of Fitora, featuring a premium glassmorphic UI and an interactive 3D walking avatar.
+![Landing Page](react-r/public/screenshots/home.png)
+
+### 2. Digital Twin Generation
+Users can upload photos to generate a highly accurate 3D representation of their body.
+![Digital Twin](react-r/public/screenshots/upload.png)
+
+### 3. Calibrated 3D Avatar
+The system processes the input and generates a calibrated avatar ready for try-on.
+![Generated Avatar](react-r/public/screenshots/generated.png)
+
+### 4. Virtual Wardrobe & Outfit Builder
+A seamless interface to browse through collections and build custom outfits in real-time.
+![Virtual Wardrobe](react-r/public/screenshots/wardrobe.png)
+
+### 5. Visual AI Search & Fit Check
+Upload your own clothes for AI analysis and receive instant fit recommendations based on brand sizing.
+![Visual Search](react-r/public/screenshots/search.png)
+
 ## 🛠️ Technology Stack
 
 ### Frontend
